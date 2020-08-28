@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Data files
+*.root
+
+# Temporary and junk files
+*~
