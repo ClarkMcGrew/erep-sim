@@ -37,6 +37,8 @@ public:
         return fCarriers;
     }
 
+    int CountCarriers() const;
+
     const std::string& GetModelName() const {return fModelName;}
 
 protected:

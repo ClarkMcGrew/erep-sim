@@ -34,10 +34,14 @@ void ERepSim::Output::CreateTrees() {
     DataTree->Branch("HitContribEnd",&HitContribEnd);
 
     DataTree->Branch("SegmentIds",&SegmentIds);
+    DataTree->Branch("SegmentPDG",&SegmentPDG);
     DataTree->Branch("SegmentEnergy",&SegmentEnergy);
-    DataTree->Branch("SegmentX",&SegmentX);
-    DataTree->Branch("SegmentY",&SegmentY);
-    DataTree->Branch("SegmentZ",&SegmentZ);
+    DataTree->Branch("SegmentX1",&SegmentX1);
+    DataTree->Branch("SegmentY1",&SegmentY1);
+    DataTree->Branch("SegmentZ1",&SegmentZ1);
+    DataTree->Branch("SegmentX2",&SegmentX2);
+    DataTree->Branch("SegmentY2",&SegmentY2);
+    DataTree->Branch("SegmentZ2",&SegmentZ2);
     DataTree->Branch("SegmentT",&SegmentT);
 
     DataTree->Branch("ContribIds",&ContribIds);
@@ -61,9 +65,13 @@ void ERepSim::Output::Reset() {
     HitContribEnd.clear();
     SegmentIds.clear();
     SegmentEnergy.clear();
-    SegmentX.clear();
-    SegmentY.clear();
-    SegmentZ.clear();
+    SegmentPDG.clear();
+    SegmentX1.clear();
+    SegmentY1.clear();
+    SegmentZ1.clear();
+    SegmentX2.clear();
+    SegmentY2.clear();
+    SegmentZ2.clear();
     SegmentT.clear();
     ContribIds.clear();
     ContribPDG.clear();

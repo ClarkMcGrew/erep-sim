@@ -27,6 +27,9 @@ public:
     /// derived class.
     virtual void Reset();
 
+    /// Set the threshold for a hit.
+    void SetThreshold(double t) {fThreshold = t;}
+
     /// Set the time zero.  This is the time the trigger occured.
     void SetTimeZero(double t) {fTimeZero = t;}
 
@@ -45,6 +48,9 @@ private:
     void DigitizeImpulses(int id, const ERepSim::Impulse::Container& impulses);
 
     void DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit, double t, double q);
+
+    // The charge threshold for the hit.
+    double fThreshold;
 
     // The time of the trigger.
     double fTimeZero;

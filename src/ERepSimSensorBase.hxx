@@ -36,6 +36,8 @@ public:
 
     const std::string& GetModelName() const {return fModelName;}
 
+    int CountImpulses() const;
+
 protected:
 
     /// What to say.  It's the name of the response model.

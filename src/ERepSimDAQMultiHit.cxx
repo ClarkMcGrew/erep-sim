@@ -6,7 +6,7 @@
 
 ERepSim::DAQMultiHit::DAQMultiHit()
     : ERepSim::DAQBase("MultiHit"),
-      fTimeZero(0), fIntegrationWindow(1E+10),
+      fThreshold(2.5), fTimeZero(0), fIntegrationWindow(50.0),
       fDigitsPerNanosecond(10.0), fDigitsPerCharge(10.0) {}
 
 ERepSim::DAQMultiHit::~DAQMultiHit() {}
@@ -30,20 +30,22 @@ void ERepSim::DAQMultiHit::Process(const ERepSim::Impulse::Map& impulses) {
 void ERepSim::DAQMultiHit::DigitizeImpulses(
     int id, const ERepSim::Impulse::Container& impulses) {
     if (impulses.empty()) return;
+    // Set up the first (possibly only) hit
     std::shared_ptr<ERepSim::DigiHit> digiHit(new ERepSim::DigiHit(id));
     digiHit->SetPosition(impulses.front()->GetPosition());
     double hitT = impulses.front()->GetTime();
-    double lastT = impulses.front()->GetTime();
     double hitQ = 0.0;
     for (ERepSim::Impulse::Container::const_iterator i = impulses.begin();
          i != impulses.end(); ++i) {
         if (id != (*i)->GetSensorId()) {
             throw std::runtime_error("DAQMultiHit::DigitizeImpulses: bad id");
         }
-        if ((*i)->GetTime() > lastT + 20.0) {
+        if ((*i)->GetTime() > hitT + fIntegrationWindow) {
             // Digitize, calibrate and move to the next hit.
-            DigitizeHit(digiHit,hitT,hitQ);
-            (*fDigiHits)[id].push_back(digiHit);
+            if (hitQ > fThreshold) {
+                DigitizeHit(digiHit,hitT,hitQ);
+                (*fDigiHits)[id].push_back(digiHit);
+            }
             // Setup for the next hit.
             digiHit.reset(new ERepSim::DigiHit(id));
             digiHit->SetPosition((*i)->GetPosition());
@@ -51,9 +53,11 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
             hitQ = 0;
         }
         digiHit->AddImpulse(*i);
-        lastT = (*i)->GetTime();
         hitQ += (*i)->GetCharge();
     }
+    if (hitQ < fThreshold) return;
+    DigitizeHit(digiHit,hitT,hitQ);
+    (*fDigiHits)[id].push_back(digiHit);
 }
 
 void ERepSim::DAQMultiHit::DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit,

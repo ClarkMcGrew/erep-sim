@@ -79,6 +79,12 @@ int main(int argc, char **argv) {
     std::unique_ptr<TFile> outputFile(new TFile(outputName.c_str(),"recreate"));
     ERepSim::Output::Get().CreateTrees();
 
+#define SAVE_GEOMETRY
+#ifdef SAVE_GEOMETRY
+    // Save the geometry into the output file
+    gGeoManager->Write();
+#endif
+
     for (auto detector: detectors) {detector->Initialize();}
 
     totalEntries = std::min(totalEntries,maxEntries);

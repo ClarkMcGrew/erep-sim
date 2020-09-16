@@ -24,8 +24,10 @@ private:
           HitTime(NULL), HitTimeWidth(NULL), HitCharge(NULL),
           HitSegmentBegin(NULL), HitSegmentEnd(NULL),
           HitContribBegin(NULL), HitContribEnd(NULL),
-          SegmentIds(NULL), SegmentEnergy(NULL),
-          SegmentX(NULL), SegmentY(NULL), SegmentZ(NULL), SegmentT(NULL),
+          SegmentIds(NULL), SegmentPDG(NULL), SegmentEnergy(NULL),
+          SegmentX1(NULL), SegmentY1(NULL), SegmentZ1(NULL),
+          SegmentX2(NULL), SegmentY2(NULL), SegmentZ2(NULL),
+          SegmentT(NULL),
           ContribIds(NULL), ContribPDG(NULL), ContribMomentum(NULL),
           PropertyTree(NULL), Property(NULL), PropertyString(NULL) {}
     Input(const Input&) {}
@@ -56,10 +58,14 @@ public:
     std::vector<int> *HitContribEnd;
 
     std::vector<int> *SegmentIds;
+    std::vector<int>   *SegmentPDG;
     std::vector<float> *SegmentEnergy;
-    std::vector<float> *SegmentX;
-    std::vector<float> *SegmentY;
-    std::vector<float> *SegmentZ;
+    std::vector<float> *SegmentX1;
+    std::vector<float> *SegmentY1;
+    std::vector<float> *SegmentZ1;
+    std::vector<float> *SegmentX2;
+    std::vector<float> *SegmentY2;
+    std::vector<float> *SegmentZ2;
     std::vector<float> *SegmentT;
 
     std::vector<int> *ContribIds;
@@ -96,9 +102,13 @@ public:
 
             DataTree->SetBranchAddress("SegmentIds",&SegmentIds);
             DataTree->SetBranchAddress("SegmentEnergy",&SegmentEnergy);
-            DataTree->SetBranchAddress("SegmentX",&SegmentX);
-            DataTree->SetBranchAddress("SegmentY",&SegmentY);
-            DataTree->SetBranchAddress("SegmentZ",&SegmentZ);
+            DataTree->SetBranchAddress("SegmentPDG",&SegmentPDG);
+            DataTree->SetBranchAddress("SegmentX1",&SegmentX1);
+            DataTree->SetBranchAddress("SegmentY1",&SegmentY1);
+            DataTree->SetBranchAddress("SegmentZ1",&SegmentZ1);
+            DataTree->SetBranchAddress("SegmentX2",&SegmentX2);
+            DataTree->SetBranchAddress("SegmentY2",&SegmentY2);
+            DataTree->SetBranchAddress("SegmentZ2",&SegmentZ2);
             DataTree->SetBranchAddress("SegmentT",&SegmentT);
 
             DataTree->SetBranchAddress("ContribIds",&ContribIds);
@@ -115,3 +125,9 @@ public:
 
 ERepSim::Input* ERepSim::Input::ThisInput = NULL;
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

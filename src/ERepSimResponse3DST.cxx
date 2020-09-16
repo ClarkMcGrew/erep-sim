@@ -57,19 +57,19 @@ void ERepSim::Response3DST::Initialize() {
     std::cout << "Response3DST::Initialize" << std::endl;
     // This is the number of photons per MeV generated in each fiber before
     // attenuation.  The value is set based on the CERN beam test prototype
-    // which measured ~65 pe per 10 mm cube for a MIP depositing ~0.18 MeV/mm.
-    // The 2.0 is for half the photons going in each direction in the fiber
-    // (and the CERN prototype didn't use mirroring.  This value includes the
-    // photon detection efficiency (PDE), and assumes that the PDE is not
-    // applied in the sensor simulation.
-    fPhotPerMeV = (65.0/10.0/0.18) * 2.0;
+    // which measured ~65 pe per fiber per 10 mm cube for a MIP depositing
+    // ~0.18 MeV/mm without mirroring (the 2.0 is for half the photons going
+    // in each direction in the fiber).  This value includes the photon
+    // detection efficiency (PDE), and assumes that the PDE is not applied in
+    // the sensor simulation.
+    fPhotPerMeV = (3.0*65.0/10.0/0.18) * 2.0;
     fLightVelocity = 200.0; // Assume the index of refraction is 1.5
     // The leakage is based on the CERN beamtest.  This is applied to the
     // energy, and not the number of photons, so it's 1/2 the published value
     // for each fiber which is normalized by measured light.
-    fXLeakage = 0.015;      // Based on the CERN beam test
-    fYLeakage = 0.015;      // Based on the CERN beam test
-    fYLeakage = 0.015;      // Based on the CERN beam test
+    fXLeakage = 0.0097;      // Based on the CERN beam test
+    fYLeakage = 0.0097;      // Based on the CERN beam test
+    fZLeakage = 0.0097;      // Based on the CERN beam test
     fCubes = 0;
     fCubeMin = 1E+10;
     fCubeMax = -1E+10;
@@ -110,10 +110,11 @@ void ERepSim::Response3DST::Initialize() {
     ERepSim::Output::Get().Property["3DST.Response.PlaneMax"] = fPlaneMax;
 
     // Set the attenuation parameters.  The sensor distance is the distance
-    // from the center of the "first" cube by the sensor.
-    ERepSim::Output::Get().Property["3DST.Response.Atten.Ratio12"] = 0.60;
-    ERepSim::Output::Get().Property["3DST.Response.Atten.Tau1"] = 4000.0;
-    ERepSim::Output::Get().Property["3DST.Response.Atten.Tau2"] = 300.0;
+    // from the center of the "first" cube by the sensor.  This comes from
+    // measurements of 1mm Kuraray fibers done at URochester in ~2010.
+    ERepSim::Output::Get().Property["3DST.Response.Atten.Ratio12"] = 0.75;
+    ERepSim::Output::Get().Property["3DST.Response.Atten.Tau1"] = 4600.0;
+    ERepSim::Output::Get().Property["3DST.Response.Atten.Tau2"] = 33.0;
     ERepSim::Output::Get().Property["3DST.Response.Atten.SensorDist"] = 20.0;
     ERepSim::Output::Get().Property["3DST.Response.Atten.Reflect"] = 0.0;
     ERepSim::Output::Get().Property["3DST.Response.Atten.MirrorDist"] = 10.0;
@@ -129,7 +130,8 @@ void ERepSim::Response3DST::Reset() {
 }
 
 void ERepSim::Response3DST::Process(const TG4HitSegmentContainer& segments) {
-    std::cout << "Response3DST::Process" << std::endl;
+    std::cout << "Response3DST::Process " << segments.size() << " segments"
+              << std::endl;
     TLorentzVector avg;
     for (std::size_t segId = 0; segId<segments.size(); ++segId) {
         const TG4HitSegment& segment = segments[segId];
@@ -138,6 +140,8 @@ void ERepSim::Response3DST::Process(const TG4HitSegmentContainer& segments) {
         if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
         AddDeposit(segId,&segment,avg,deposit);
     }
+    std::cout << "Response3DST::Process " << CountCarriers()
+              << " carriers generated" << std::endl;
 }
 
 void ERepSim::Response3DST::AddDeposit(int segId, const TG4HitSegment* seg,
@@ -164,9 +168,9 @@ void ERepSim::Response3DST::AddDeposit(int segId, const TG4HitSegment* seg,
     AddCubeDeposit(segId,seg,neighbor,fYLeakage*deposit);
 
     neighbor = cube + TLorentzVector(0,0,0,fZPitch);
-    AddCubeDeposit(segId,seg,neighbor,fYLeakage*deposit);
+    AddCubeDeposit(segId,seg,neighbor,fZLeakage*deposit);
     neighbor = cube - TLorentzVector(0,0,0,fZPitch);
-    AddCubeDeposit(segId,seg,neighbor,fYLeakage*deposit);
+    AddCubeDeposit(segId,seg,neighbor,fZLeakage*deposit);
 }
 
 void ERepSim::Response3DST::AddCubeDeposit(int segId, const TG4HitSegment* seg,
@@ -219,8 +223,10 @@ void ERepSim::Response3DST::AddFiberDeposit(int sensId, int segId,
     double dist = (cube.Vect()-fiber.Vect()).Mag();
     double survival = PhotonSurvivalProb(dist);
     // Add half the photons going directly toward the sensor
-    int photons = gRandom->Poisson(0.5*generatedPhotons*survival);
+    double expected = 0.5*generatedPhotons*survival;
+    int photons = gRandom->Poisson(expected);
     AddFiberPhotons(sensId,segId,seg,fiber,cube,photons);
+
     // Add half the photons that started going toward the mirror.
     double reflectivity =
         ERepSim::Output::Get().Property["3DST.Response.Atten.Reflect"];
@@ -230,6 +236,7 @@ void ERepSim::Response3DST::AddFiberDeposit(int sensId, int segId,
     photons = gRandom->Poisson(0.5*generatedPhotons*survival);
     fiber.SetT(fiber.T() + extraDist/fLightVelocity);
     AddFiberPhotons(sensId,segId,seg,fiber,cube,photons);
+
 }
 
 void ERepSim::Response3DST::AddFiberPhotons(int sensId, int segId,

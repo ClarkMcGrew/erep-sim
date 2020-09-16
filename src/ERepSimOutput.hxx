@@ -39,9 +39,13 @@ public:
 
     std::vector<int> SegmentIds;
     std::vector<float> SegmentEnergy;
-    std::vector<float> SegmentX;
-    std::vector<float> SegmentY;
-    std::vector<float> SegmentZ;
+    std::vector<float> SegmentPDG;
+    std::vector<float> SegmentX1;
+    std::vector<float> SegmentY1;
+    std::vector<float> SegmentZ1;
+    std::vector<float> SegmentX2;
+    std::vector<float> SegmentY2;
+    std::vector<float> SegmentZ2;
     std::vector<float> SegmentT;
 
     std::vector<int> ContribIds;

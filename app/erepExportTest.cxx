@@ -61,9 +61,12 @@ int main(int argc, char **argv) {
                 std::cout << "        S -> "
                           << " " << (*ERepSim::Input::Get().SegmentIds)[j]
                           << " " << (*ERepSim::Input::Get().SegmentEnergy)[j]
-                          << " " << (*ERepSim::Input::Get().SegmentX)[j]
-                          << " " << (*ERepSim::Input::Get().SegmentY)[j]
-                          << " " << (*ERepSim::Input::Get().SegmentZ)[j]
+                          << " " << (*ERepSim::Input::Get().SegmentX1)[j]
+                          << " " << (*ERepSim::Input::Get().SegmentY1)[j]
+                          << " " << (*ERepSim::Input::Get().SegmentZ1)[j]
+                          << " " << (*ERepSim::Input::Get().SegmentX2)[j]
+                          << " " << (*ERepSim::Input::Get().SegmentY2)[j]
+                          << " " << (*ERepSim::Input::Get().SegmentZ2)[j]
                           << " " << (*ERepSim::Input::Get().SegmentT)[j]
                           << std::endl;
             }

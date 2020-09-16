@@ -38,6 +38,9 @@ void ERepSim::SensorIdeal::Process(const ERepSim::Carrier::Map& carriers) {
          imp != fImpulses->end(); ++imp) {
         std::sort(imp->second.begin(), imp->second.end(), CompareImpulses());
     }
+
+    std::cout << "SensorIdeal::Process " << CountImpulses()
+              << " impulses generated" << std::endl;
 }
 
 void ERepSim::SensorIdeal::AddImpulses(
