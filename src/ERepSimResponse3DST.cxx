@@ -233,7 +233,8 @@ void ERepSim::Response3DST::AddFiberDeposit(int sensId, int segId,
     double longDist = 2.0*fiberLength - dist;
     double extraDist = longDist - dist;
     survival = reflectivity*PhotonSurvivalProb(longDist);
-    photons = gRandom->Poisson(0.5*generatedPhotons*survival);
+    expected =  0.5*generatedPhotons*survival;
+    photons = gRandom->Poisson(expected);
     fiber.SetT(fiber.T() + extraDist/fLightVelocity);
     AddFiberPhotons(sensId,segId,seg,fiber,cube,photons);
 
@@ -261,7 +262,7 @@ double ERepSim::Response3DST::PhotonSurvivalProb(double x) {
     double f = ERepSim::Output::Get().Property["3DST.Response.Atten.Ratio12"];
     double t1 = ERepSim::Output::Get().Property["3DST.Response.Atten.Tau1"];
     double t2 = ERepSim::Output::Get().Property["3DST.Response.Atten.Tau2"];
-    double p0 = 0.5*(f * std::exp(-x/t1) + (1.0-f)*std::exp(-x/t2));
+    double p0 = f * std::exp(-x/t1) + (1.0-f)*std::exp(-x/t2);
     return p0;
 }
 
