@@ -89,13 +89,12 @@ int main(int argc, char **argv) {
 
     totalEntries = std::min(totalEntries,maxEntries);
     for (int entry = 0; entry < totalEntries; ++entry) {
-        ERepSim::Output::Get().Reset();
-        for (auto detector: detectors) {detector->Reset();}
 
         edepsimTree->GetEntry(entry);
-        ERepSim::Output::Get().RunId = edepsimEvent->RunId;
-        ERepSim::Output::Get().EventId = edepsimEvent->EventId;
 
+        for (auto detector: detectors) {detector->Reset();}
+
+        ERepSim::Output::Get().Reset(edepsimEvent);
         std::cout << "Process event " << ERepSim::Output::Get().RunId
                   << "/" << ERepSim::Output::Get().EventId<< std::endl;
 
