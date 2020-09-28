@@ -37,6 +37,10 @@ public:
     /// hit.
     void SetIntegrationWindow(double t) {fIntegrationWindow = t;}
 
+    /// Set the dead time between hits on a channel.  This is the minimum time
+    /// window for a hit.
+    void SetDeadTime(double t) {fDeadTime = t;}
+
     /// Set the time calibration in TDC counts per ns
     void SetTimeCalibration(double t) {fDigitsPerNanosecond = t;}
 
@@ -55,8 +59,11 @@ private:
     // The time of the trigger.
     double fTimeZero;
 
-    // the integration window for the ADC.
+    // The integration window for the ADC.
     double fIntegrationWindow;
+
+    // The dead time after a hit on an ADC.
+    double fDeadTime;
 
     // The calibration constant for time.
     double fDigitsPerNanosecond;

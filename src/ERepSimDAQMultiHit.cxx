@@ -6,7 +6,7 @@
 
 ERepSim::DAQMultiHit::DAQMultiHit()
     : ERepSim::DAQBase("MultiHit"),
-      fThreshold(2.5), fTimeZero(0), fIntegrationWindow(50.0),
+      fThreshold(2.5), fTimeZero(0), fIntegrationWindow(50.0), fDeadTime(10.0),
       fDigitsPerNanosecond(10.0), fDigitsPerCharge(10.0) {}
 
 ERepSim::DAQMultiHit::~DAQMultiHit() {}
@@ -40,7 +40,7 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
         if (id != (*i)->GetSensorId()) {
             throw std::runtime_error("DAQMultiHit::DigitizeImpulses: bad id");
         }
-        if ((*i)->GetTime() > hitT + fIntegrationWindow) {
+        if ((*i)->GetTime() > hitT + fIntegrationWindow + fDeadTime) {
             // Digitize, calibrate and move to the next hit.
             if (hitQ > fThreshold) {
                 DigitizeHit(digiHit,hitT,hitQ);
@@ -52,6 +52,7 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
             hitT = (*i)->GetTime();
             hitQ = 0;
         }
+        if ((*i)->GetTime() > hitT + fIntegrationWindow) continue;
         digiHit->AddImpulse(*i);
         hitQ += (*i)->GetCharge();
     }
