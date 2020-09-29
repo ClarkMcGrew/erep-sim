@@ -64,6 +64,7 @@ void ERepSim::DetectorBase::PackImpulses(
         TLorentzVector sPos1;
         TLorentzVector sPos2;
         int pdg = 0;
+        int trackId = -1;
         if (s->second) {
             ener = s->second->GetEnergyDeposit();
             sPos1 = s->second->GetStart();
@@ -72,9 +73,11 @@ void ERepSim::DetectorBase::PackImpulses(
             if (!s->second->Contrib.empty()) {
                 int indx = s->second->Contrib.front();
                 pdg = fCurrentEvent->Trajectories[indx].GetPDGCode();
+                trackId = fCurrentEvent->Trajectories[indx].GetTrackId();
             }
         }
         ERepSim::Output::Get().SegmentIds.push_back(s->first);
+        ERepSim::Output::Get().SegmentTrackId.push_back(trackId);
         ERepSim::Output::Get().SegmentEnergy.push_back(ener);
         ERepSim::Output::Get().SegmentPDG.push_back(pdg);
         ERepSim::Output::Get().SegmentX1.push_back(sPos1.X());
@@ -90,7 +93,8 @@ void ERepSim::DetectorBase::PackImpulses(
         }
     }
     for(std::set<int>::iterator t = contrib.begin(); t != contrib.end(); ++t) {
-        ERepSim::Output::Get().ContribIds.push_back(*t);
+        ERepSim::Output::Get().ContribIds.push_back(
+            fCurrentEvent->Trajectories[*t].GetTrackId());
         ERepSim::Output::Get().ContribPDG.push_back(
             fCurrentEvent->Trajectories[*t].GetPDGCode());
         ERepSim::Output::Get().ContribMomentum.push_back(
