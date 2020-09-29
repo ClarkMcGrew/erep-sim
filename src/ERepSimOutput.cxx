@@ -34,6 +34,7 @@ void ERepSim::Output::CreateTrees() {
     DataTree->Branch("HitContribEnd",&HitContribEnd);
 
     DataTree->Branch("SegmentIds",&SegmentIds);
+    DataTree->Branch("SegmentTrackId",&SegmentTrackId);
     DataTree->Branch("SegmentPDG",&SegmentPDG);
     DataTree->Branch("SegmentEnergy",&SegmentEnergy);
     DataTree->Branch("SegmentX1",&SegmentX1);
@@ -76,9 +77,11 @@ void ERepSim::Output::Reset(const TG4Event *event) {
     HitSegmentEnd.clear();
     HitContribBegin.clear();
     HitContribEnd.clear();
+
     SegmentIds.clear();
-    SegmentEnergy.clear();
+    SegmentTrackId.clear();
     SegmentPDG.clear();
+    SegmentEnergy.clear();
     SegmentX1.clear();
     SegmentY1.clear();
     SegmentZ1.clear();
@@ -86,9 +89,11 @@ void ERepSim::Output::Reset(const TG4Event *event) {
     SegmentY2.clear();
     SegmentZ2.clear();
     SegmentT.clear();
+
     ContribIds.clear();
     ContribPDG.clear();
     ContribMomentum.clear();
+
     TrajectoryId.clear();
     TrajectoryParent.clear();
     TrajectoryPDG.clear();
@@ -100,6 +105,7 @@ void ERepSim::Output::Reset(const TG4Event *event) {
     TrajectoryPy.clear();
     TrajectoryPz.clear();
     TrajectoryPe.clear();
+
     if (!event) return;
 
     RunId = event->RunId;
