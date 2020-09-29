@@ -24,11 +24,17 @@ private:
           HitTime(NULL), HitTimeWidth(NULL), HitCharge(NULL),
           HitSegmentBegin(NULL), HitSegmentEnd(NULL),
           HitContribBegin(NULL), HitContribEnd(NULL),
-          SegmentIds(NULL), SegmentPDG(NULL), SegmentEnergy(NULL),
+          SegmentIds(NULL), SegmentTrackId(NULL),
+          SegmentPDG(NULL), SegmentEnergy(NULL),
           SegmentX1(NULL), SegmentY1(NULL), SegmentZ1(NULL),
           SegmentX2(NULL), SegmentY2(NULL), SegmentZ2(NULL),
           SegmentT(NULL),
           ContribIds(NULL), ContribPDG(NULL), ContribMomentum(NULL),
+          TrajectoryId(NULL), TrajectoryParent(NULL), TrajectoryPDG(NULL),
+          TrajectoryX(NULL), TrajectoryY(NULL), TrajectoryZ(NULL),
+          TrajectoryT(NULL),
+          TrajectoryPx(NULL), TrajectoryPy(NULL), TrajectoryPz(NULL),
+          TrajectoryPe(NULL),
           PropertyTree(NULL), Property(NULL), PropertyString(NULL) {}
     Input(const Input&) {}
     Input& operator=(const Input&) {return *ThisInput;}
@@ -57,7 +63,15 @@ public:
     std::vector<int> *HitContribBegin;
     std::vector<int> *HitContribEnd;
 
+    // The identifier of the hit segment.  This is also the index of the hit
+    // segment in the edep-sim TG4HitSegment in the TG4HitSegmentContainer.
     std::vector<int> *SegmentIds;
+
+    // The trajectory id of the main particle for this segment (i.e. the first
+    // particle that contributed to the segment).
+    std::vector<int> *SegmentTrackId;
+
+    // The parameters of the segment.
     std::vector<int>   *SegmentPDG;
     std::vector<float> *SegmentEnergy;
     std::vector<float> *SegmentX1;
@@ -68,9 +82,33 @@ public:
     std::vector<float> *SegmentZ2;
     std::vector<float> *SegmentT;
 
+    // The trajectory id for this contributor
     std::vector<int> *ContribIds;
+    // A convenient vector of the PDG values.  The value is duplicated from
+    // TrajectoryPDG
     std::vector<int> *ContribPDG;
+    // A convenient vector of momenta.  The value is equal to the magnitude of
+    // the TrajectoryP[xyze] vectors.
     std::vector<float> *ContribMomentum;
+
+    // The identifier for the trajectory from geant.  The value should be
+    // equal to the index.
+    std::vector<int> *TrajectoryId;
+
+    // The identifier of the parent particle.  The parent will be negative
+    // when this is a primary particle (check, it might be zero).
+    std::vector<int> *TrajectoryParent;
+
+    // The particle information.
+    std::vector<int> *TrajectoryPDG;
+    std::vector<float> *TrajectoryX;
+    std::vector<float> *TrajectoryY;
+    std::vector<float> *TrajectoryZ;
+    std::vector<float> *TrajectoryT;
+    std::vector<float> *TrajectoryPx;
+    std::vector<float> *TrajectoryPy;
+    std::vector<float> *TrajectoryPz;
+    std::vector<float> *TrajectoryPe;
 
     TTree* PropertyTree;
     std::map<std::string,double> *Property;
@@ -101,6 +139,7 @@ public:
             DataTree->SetBranchAddress("HitContribEnd",&HitContribEnd);
 
             DataTree->SetBranchAddress("SegmentIds",&SegmentIds);
+            DataTree->SetBranchAddress("SegmentTrackId",&SegmentTrackId);
             DataTree->SetBranchAddress("SegmentEnergy",&SegmentEnergy);
             DataTree->SetBranchAddress("SegmentPDG",&SegmentPDG);
             DataTree->SetBranchAddress("SegmentX1",&SegmentX1);
@@ -114,6 +153,18 @@ public:
             DataTree->SetBranchAddress("ContribIds",&ContribIds);
             DataTree->SetBranchAddress("ContribPDG",&ContribPDG);
             DataTree->SetBranchAddress("ContribMomentum",&ContribMomentum);
+
+            DataTree->SetBranchAddress("TrajectoryId",&TrajectoryId);
+            DataTree->SetBranchAddress("TrajectoryParent",&TrajectoryParent);
+            DataTree->SetBranchAddress("TrajectoryPDG",&TrajectoryPDG);
+            DataTree->SetBranchAddress("TrajectoryX",&TrajectoryX);
+            DataTree->SetBranchAddress("TrajectoryY",&TrajectoryY);
+            DataTree->SetBranchAddress("TrajectoryZ",&TrajectoryZ);
+            DataTree->SetBranchAddress("TrajectoryT",&TrajectoryT);
+            DataTree->SetBranchAddress("TrajectoryPx",&TrajectoryPx);
+            DataTree->SetBranchAddress("TrajectoryPy",&TrajectoryPy);
+            DataTree->SetBranchAddress("TrajectoryPz",&TrajectoryPz);
+            DataTree->SetBranchAddress("TrajectoryPe",&TrajectoryPe);
         }
     }
 
