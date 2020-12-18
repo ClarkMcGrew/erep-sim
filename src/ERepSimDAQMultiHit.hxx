@@ -1,5 +1,5 @@
 #ifndef ERepSimDAQMultiHit_hxx_seen
-#define ERepSimDAQMulti_hxx_seen
+#define ERepSimDAQMultiHit_hxx_seen
 
 #include "ERepSimDAQBase.hxx"
 

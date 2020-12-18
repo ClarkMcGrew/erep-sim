@@ -2,6 +2,7 @@
 #include "ERepSimOutput.hxx"
 #include "ERepSimDetectorBase.hxx"
 #include "ERepSimDetector3DST.hxx"
+#include "ERepSimDetectorTPC.hxx"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -75,6 +76,15 @@ int main(int argc, char **argv) {
     detectors.push_back(
         std::shared_ptr<ERepSim::Detector3DST>(
             new ERepSim::Detector3DST));
+    detectors.push_back(
+        std::shared_ptr<ERepSim::DetectorTPC>(
+            new ERepSim::DetectorTPC(ERepSim::TPC_id::DOWNSTREAM)));
+    detectors.push_back(
+        std::shared_ptr<ERepSim::DetectorTPC>(
+            new ERepSim::DetectorTPC(ERepSim::TPC_id::TOP)));
+    detectors.push_back(
+        std::shared_ptr<ERepSim::DetectorTPC>(
+            new ERepSim::DetectorTPC(ERepSim::TPC_id::BOTTOM)));
 
     std::unique_ptr<TFile> outputFile(new TFile(outputName.c_str(),"recreate"));
     ERepSim::Output::Get().CreateTrees();
