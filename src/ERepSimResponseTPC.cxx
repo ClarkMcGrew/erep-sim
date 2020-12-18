@@ -131,7 +131,7 @@ void ERepSim::ResponseTPC::Process(const TG4HitSegmentContainer& segments) {
     //     if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
     //     AddDeposit(segId,&segment,avg,deposit);
     // }
-    std::cout << fCarriers << std::endl;
+
     std::cout << "ResponseTPC::Process " << CountCarriers()
               << " carriers generated" << std::endl;
 }
