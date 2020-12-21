@@ -27,7 +27,6 @@ bool ERepSim::ResponseTPC::RecurseGeometry() {
     }
 
     const char* volTpc = ERepSim::TPCdef::volNames[fTpcId];
-    std::cout << "TPC id : " << fTpcId << " name: " << volTpc << std::endl;
 
     if(name.find(volTpc) != std::string::npos){
 
@@ -60,6 +59,10 @@ void ERepSim::ResponseTPC::Initialize() {
     fPadSizeY = 10;
     fPadSizeZ = 10;
 
+    fStepSize = 1; //1mm step size along segments
+    fWI = 23.6; //eV
+    fGainMM = 1000; //MM gain
+
     fXmin = 0.;
     fXmax = 0.;
     fYmin = 0.;
@@ -70,11 +73,17 @@ void ERepSim::ResponseTPC::Initialize() {
     gGeoManager->CdTop();
     RecurseGeometry();
 
+    std::cout << fXmin << " < X < " << fXmax << std::endl;
+    std::cout << fYmin << " < Y < " << fYmax << std::endl;
+    std::cout << fZmin << " < Z < " << fZmax << std::endl;
+
     fCathodeX = (fXmin + fXmax)/2;
     fNbPadsY = ceil((fYmax - fYmin)/fPadSizeY);
     fNbPadsZ = ceil((fZmax - fZmin)/fPadSizeZ);
 
-    // ERepSim::Output::Get().Property["TPC.Response.PhotPerMeV"] = fPhotPerMeV;
+    ERepSim::Output::Get().Property["TPC.Response.StepSize"] = fStepSize;
+    ERepSim::Output::Get().Property["TPC.Response.WI"] = fWI;
+    ERepSim::Output::Get().Property["TPC.Response.GainMM"] = fGainMM;
     // ERepSim::Output::Get().Property["TPC.Response.Velocity"] = fLightVelocity;
 
     // ERepSim::Output::Get().Property["TPC.Response.XLeakage"] = fXLeakage;
@@ -123,153 +132,73 @@ void ERepSim::ResponseTPC::Process(const TG4HitSegmentContainer& segments) {
         AddTrack(segId, seg);
     }
 
-    // TLorentzVector avg;
-    // for (std::size_t segId = 0; segId<segments.size(); ++segId) {
-    //     const TG4HitSegment& segment = segments[segId];
-    //     avg = 0.5*segment.GetStart() + 0.5*segment.GetStop();
-    //     double deposit = segment.GetSecondaryDeposit();
-    //     if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
-    //     AddDeposit(segId,&segment,avg,deposit);
-    // }
-
     std::cout << "ResponseTPC::Process " << CountCarriers()
               << " carriers generated" << std::endl;
 }
 
-void ERepSim::ResponseTPC::AddTrack(int segId, const TG4HitSegment& seg){
-    const TLorentzVector& start = seg.GetStart();
-    const TLorentzVector& stop = seg.GetStop();
+void ERepSim::ResponseTPC::GenerateElectrons(int segId, const TG4HitSegment& seg,
+                                        TLorentzVector generationPoint, double segLength){
+    const float eVtofC = 6250;
 
-    //Check if track crosses the cathode
-    if((start.X() - fCathodeX)*(stop.X() - fCathodeX) < 0){
-        //Split the track over the intersection point
-        double t = (fCathodeX - start.X())/(stop.X() - start.X());
-        TLorentzVector intersection = start + (stop - start)*t;
-        intersection.SetX(fCathodeX);
-
-        TG4HitSegment *seg1 = static_cast<TG4HitSegment*>(seg.Clone());
-        TG4HitSegment *seg2 = static_cast<TG4HitSegment*>(seg.Clone());
-
-        seg1->Stop = intersection;
-        seg1->EnergyDeposit *= t;
-        seg1->SecondaryDeposit *= t;
-        seg1->TrackLength *= t;
-
-        seg2->Start = intersection;
-        seg2->EnergyDeposit *= (1 - t);
-        seg2->SecondaryDeposit *= (1 - t);
-        seg2->TrackLength *= (1 - t);
-
-        AddTrack(segId, *seg1);
-        AddTrack(segId, *seg2);
-
-        return;
+    if(generationPoint.Y() < fYmin || generationPoint.Y() > fYmax ||  generationPoint.Z() < fZmin || generationPoint.Z() > fZmax){
+        return; //To handle some a few border cases due to rounding errors I think
     }
 
     int plane;
 
-    if(std::min(start.X(), stop.X()) < fCathodeX)
+    if(generationPoint.X() < fCathodeX)
         plane = 0;
     else
         plane = 1;
 
-    const std::vector<TLorentzVector> crosses = ComputeCrosses(start, stop);
-    double total_length = sqrtf(powf(start.Y() - stop.Y(), 2) + powf(start.Z() - stop.Z(), 2));
+    int pad_i = floor((generationPoint.Y() - fYmin)/fPadSizeY);
+    int pad_j = floor((generationPoint.Z() - fZmin)/fPadSizeZ);
 
-    for(uint i = 0; i < crosses.size() - 1; i++){
-        if(crosses[i] == crosses[i+1])//Dealing with borders
-            continue;
-        TLorentzVector middle_point = (crosses[i] + crosses[i + 1])*0.5;
+    int sensId = GetSensorId(plane, pad_i, pad_j);
 
-        int pad_i = floor((middle_point.Y() - fYmin)/fPadSizeY);
-        int pad_j = floor((middle_point.Z() - fZmin)/fPadSizeZ);
+    double totalLength = Length(seg.GetStop(), seg.GetStart());
 
-        double length_on_pad = sqrtf(powf(crosses[i].Y() - crosses[i + 1].Y(), 2) + powf(crosses[i].Z() - crosses[i + 1].Z(), 2));
+    double energy = seg.EnergyDeposit*segLength/totalLength;
+    double nbElectrons = energy*1E6/fWI/eVtofC;
 
-        double energy_on_pad = seg.EnergyDeposit*length_on_pad/total_length;
-
-        double avg_t = middle_point.T();
-        double dist_to_anode = (plane == 0) ? middle_point.X() - fXmin : fXmax - middle_point.X();
-
-        avg_t += GetDriftTime(dist_to_anode);
-        double sigma_t = GetSigmaDriftTime(dist_to_anode);
-
-        int sensId = GetSensorId(plane, pad_i, pad_j);
-
-        // Transversal spread is neglected compared to charge_spreading
-
-        AddHit(sensId, segId, seg, energy_on_pad, avg_t, sigma_t, middle_point);
-    }
+    DriftElectrons(segId, seg, sensId, nbElectrons, generationPoint);
 }
 
-const std::vector<TLorentzVector> ERepSim::ResponseTPC::ComputeCrosses(const TLorentzVector A, const TLorentzVector B){
-    std::vector<TLorentzVector> crosses;
-    crosses.push_back(A);
+void ERepSim::ResponseTPC::DriftElectrons(int segId, const TG4HitSegment& seg,
+                                        int sensId, double nbElectrons, TLorentzVector generationPoint){
+    // Transversal spread is neglected compared to charge_spreading
 
-    const TLorentzVector vdir = B - A;
+    double avg_t = generationPoint.T();
+    double anodeDist = (generationPoint.X() < fCathodeX) ? generationPoint.X() - fXmin : fXmax - generationPoint.X();
 
-    if(A.Y() != B.Y()){
-        double y0 = std::min(A.Y(), B.Y());
-        double y1 = std::max(A.Y(), B.Y());
+    avg_t += GetDriftTime(anodeDist);
+    double sigma_t = GetSigmaDriftTime(anodeDist);
 
-        double yI0 = ceil((y0 - fYmin)/fPadSizeY)*fPadSizeY + fYmin;
-        double yI1 = floor((y1 - fYmin)/fPadSizeY)*fPadSizeY + fYmin;
-
-        for(double yI = yI0; yI < yI1 + fPadSizeY/2; yI += fPadSizeY){
-            double tI = (yI - A.Y())/(B.Y() - A.Y());
-            TLorentzVector pI = A + tI*vdir;
-            crosses.push_back(pI);
-        }
-    }
-
-    if(A.Z() != B.Z()){
-        double z0 = std::min(A.Z(), B.Z());
-        double z1 = std::max(A.Z(), B.Z());
-
-        double zI0 = ceil((z0 - fZmin)/fPadSizeZ)*fPadSizeZ + fZmin;
-        double zI1 = floor((z1 - fZmin)/fPadSizeZ)*fPadSizeZ + fZmin;
-
-        for(double zI = zI0; zI < zI1 + fPadSizeZ/2; zI += fPadSizeZ){
-            double tI = (zI - A.Z())/(B.Z() - A.Z());
-            TLorentzVector pI = A + tI*vdir;
-            crosses.push_back(pI);
-        }
-    }
-
-    crosses.push_back(B);
-
-    sort(crosses.begin(), crosses.end(),
-        [A](const TLorentzVector &a, const TLorentzVector &b) -> bool{
-            double dista = pow(A.Y() - a.Y(), 2) + pow(A.Z() - a.Z(), 2);
-            double distb = pow(A.Y() - b.Y(), 2) + pow(A.Z() - b.Z(), 2);
-
-            return dista > distb;
-        });
-
-    return crosses;
+    MMAmplification(segId, seg, sensId, nbElectrons, avg_t, sigma_t, generationPoint);
 }
 
-void ERepSim::ResponseTPC::AddHit(int sensId, int segId,
-                                    const TG4HitSegment& seg,
-                                    double energy,
-                                    double avg_t,
-                                    double sigma_t,
-                                    TLorentzVector pos){
+void ERepSim::ResponseTPC::MMAmplification(int segId, const TG4HitSegment& seg,
+                                        int sensId, double nbElectrons,
+                                        double avg_t, double sigma_t,
+                                        TLorentzVector generationPoint){
+    nbElectrons *= fGainMM; //Supposing uniform amplification
+    SpreadCharge(segId, seg, sensId, nbElectrons, avg_t, sigma_t, generationPoint);
+}
 
-    const float MMgain = 1000;
-    const float WI = 23.6; //eV
-    const float eVtofC = 6250;
+void ERepSim::ResponseTPC::SpreadCharge(int segId, const TG4HitSegment& seg,
+                                        int sensId, double nbElectrons,
+                                        double avg_t, double sigma_t,
+                                        TLorentzVector generationPoint){
+    //Very very basic charge spreading for now, not taking into account the generationPoint but only
+    //applying hits on neighbouring pads with relative energy coefficients coming out of nowhere
 
     int plane, pad_y, pad_z;
     GetPadInfo(sensId, plane, pad_y, pad_z);
 
-    assert(pad_y >= 0);
-    assert(pad_y <= fNbPadsY);
-    assert(pad_z >= 0);
-    assert(pad_z <= fNbPadsZ);
-
-    if(pad_y == fNbPadsY || pad_z == fNbPadsZ)
-        return;
+    // if(pad_y == fNbPadsY || pad_z == fNbPadsZ){
+    //     std::cout << "ERROR" << std::endl;
+    //     return;
+    // }
 
     //For now, very basic charge spreading of 1 pad in 4 directions + instantaneous charge spreading, to be improved
     std::vector<std::pair<int, int>> coord_change;
@@ -283,22 +212,89 @@ void ERepSim::ResponseTPC::AddHit(int sensId, int segId,
         if(pad_y + xy.first < 0 || pad_y + xy.first >= fNbPadsY || pad_z + xy.second < 0 || pad_z + xy.second > fNbPadsZ){
             continue;
         }
-        int cur_pad_id = GetSensorId(plane, pad_y + xy.first, pad_z + xy.second);
-        double energy_coeff = (xy.first == 0 && xy.second == 0) ? 0.5 : 0.125; //Random coeef values for charge spreading intensity, to be improved
+        int curSensId = GetSensorId(plane, pad_y + xy.first, pad_z + xy.second);
+        double spreadCoeff = (xy.first == 0 && xy.second == 0) ? 0.5 : 0.125; //Random coeff values for charge spreading intensity, to be improved
+
+        AddHit(segId, seg, curSensId, nbElectrons*spreadCoeff, avg_t, sigma_t, generationPoint);
+    }
+}
+
+void ERepSim::ResponseTPC::AddHit(int segId, const TG4HitSegment& seg,
+                                int sensId, double nbElectrons,
+                                double avg_t, double sigma_t,
+                                TLorentzVector generationPoint){
+
+    int plane, pad_y, pad_z;
+    GetPadInfo(sensId, plane, pad_y, pad_z);
+
+    double finalPos[4];
+    finalPos[0] = (plane == 0) ? fXmin : fXmax;
+    finalPos[1] = (0.5 + pad_y)*fPadSizeY + fYmin;
+    finalPos[2] = (0.5 + pad_z)*fPadSizeZ + fZmin;
+    finalPos[3] = avg_t;
+    std::shared_ptr<ERepSim::Carrier> carrier(
+        new ERepSim::Carrier(sensId,segId,&seg));
+    carrier->SetInitialPosition(generationPoint.X(),generationPoint.Y(),generationPoint.Z(),generationPoint.T());
+    carrier->SetFinalPosition(finalPos[0], finalPos[1], finalPos[2], finalPos[3]);
+    carrier->SetPositionSigma(0, 0, 0, sigma_t);
+    carrier->SetCharge(nbElectrons);
+    (*fCarriers)[sensId].push_back(carrier);
+}
+
+std::vector<std::pair<TLorentzVector, double>> ERepSim::ResponseTPC::ComputeSteps(TLorentzVector& startPoint,
+                                                                                TLorentzVector& stopPoint){
+    std::vector<std::pair<TLorentzVector, double>> steps; //{(center, length)}
+    double length = Length(stopPoint, startPoint);
+
+    double cumulatedLength = 0.;
+    double t = 0.; //t value (from [0 to 1]) of the middle point of the current step
+    while(cumulatedLength < length){
+        t = (cumulatedLength + 0.5*fStepSize)/length;
+        TLorentzVector curPoint = startPoint + (stopPoint - startPoint)*t;
+
+        steps.push_back(std::make_pair(curPoint, fStepSize));
+
+        cumulatedLength += fStepSize;
+    }
+
+    //Dealing with the last bit left
+    double last_t = (1 + t)*0.5;
+    double lastSize = (1 - t)*length;
+    TLorentzVector curPoint = startPoint + (stopPoint - startPoint)*last_t;
+    steps.push_back(std::make_pair(curPoint, lastSize));
+
+    return steps;
+
+}
+
+void ERepSim::ResponseTPC::AddTrack(int segId, const TG4HitSegment& seg){
+    const TLorentzVector& start = seg.GetStart();
+    const TLorentzVector& stop = seg.GetStop();
+
+    std::vector<TLorentzVector> iterationPoints;
+    iterationPoints.push_back(start);
+
+    //Check if track crosses the cathode
+    if((start.X() - fCathodeX)*(stop.X() - fCathodeX) < 0){
+        //Split the track over the intersection point
+        double t = (fCathodeX - start.X())/(stop.X() - start.X());
+        TLorentzVector intersection = start + (stop - start)*t;
+        intersection.SetX(fCathodeX);
+        iterationPoints.push_back(intersection);
+    }
+
+    iterationPoints.push_back(stop);
 
 
-        double finalPos[4];
-        finalPos[0] = (plane == 0) ? fXmin : fXmax;
-        finalPos[1] = (0.5 + pad_y)*fPadSizeY;
-        finalPos[2] = (0.5 + pad_z)*fPadSizeZ;
-        finalPos[3] = avg_t;
-        std::shared_ptr<ERepSim::Carrier> carrier(
-            new ERepSim::Carrier(cur_pad_id,segId,&seg));
-        carrier->SetInitialPosition(pos.X(),pos.Y(),pos.Z(),pos.T());
-        carrier->SetFinalPosition(finalPos[0], finalPos[1], finalPos[2], finalPos[3]);
-        carrier->SetPositionSigma(0, 0, 0, sigma_t);
-        carrier->SetCharge(energy_coeff*energy*MMgain*1E6/WI/eVtofC);
-        (*fCarriers)[cur_pad_id].push_back(carrier);
+
+    for(uint i = 0; i < iterationPoints.size() - 1; i++){
+        TLorentzVector startPoint = iterationPoints[i];
+        TLorentzVector stopPoint = iterationPoints[i + 1];
+
+        std::vector<std::pair<TLorentzVector, double>> steps = ComputeSteps(startPoint, stopPoint);
+        for(std::pair<TLorentzVector, double> &step : steps){
+            GenerateElectrons(segId, seg, step.first, step.second);
+        }
     }
 }
 
@@ -330,4 +326,8 @@ double ERepSim::ResponseTPC::GetSigmaDriftTime(double dist){
 double ERepSim::ResponseTPC::GetLongitudinalSpread(double dist){
     const double sigmaL = 0.237; //mm/sqrt(cm)
     return std::sqrt(dist)*sigmaL;
+}
+
+double ERepSim::ResponseTPC::Length(const TLorentzVector& A, const TLorentzVector& B){
+    return std::sqrt(std::pow(A.X() - B.X(), 2) + std::pow(A.Y() - B.Y(), 2) + std::pow(A.Z() - B.Z(), 2));
 }
