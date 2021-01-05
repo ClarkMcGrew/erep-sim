@@ -36,6 +36,7 @@ void ERepSim::DetectorTPC::Initialize() {
 
 
     ERepSim::Output::Get().Property["TPC.DAQ.TimeZero"] = -100.0;
+    // ERepSim::Output::Get().Property["TPC.DAQ.IntegrationWindow"] = 200.0; //ns
     ERepSim::Output::Get().Property["TPC.DAQ.IntegrationWindow"] = 50.0; //ns
     ERepSim::Output::Get().Property["TPC.DAQ.DigitPerNanosecond"] = 2.0;
     ERepSim::Output::Get().Property["TPC.DAQ.DigitPerCharge"] = 5.0;
@@ -43,6 +44,7 @@ void ERepSim::DetectorTPC::Initialize() {
     std::shared_ptr<ERepSim::DAQMultiHit> multi(new ERepSim::DAQMultiHit);
     multi->SetTimeZero(
         ERepSim::Output::Get().Property["TPC.DAQ.TimeZero"]);
+    multi->UseAverageTime();
     multi->SetIntegrationWindow(
         ERepSim::Output::Get().Property["TPC.DAQ.IntegrationWindow"]);
     multi->SetTimeCalibration(
@@ -66,6 +68,7 @@ void ERepSim::DetectorTPC::Process(TG4Event* event) {
     fCurrentEvent = event;
     TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     std::cout << "DetectorTPC::Process " << segments[fHitContainer].size()
+              << " segments"
               << std::endl;
     fResponse->Process(segments[fHitContainer]);
     if (fResponse->GetCarriers()) {
@@ -90,3 +93,9 @@ void ERepSim::DetectorTPC::Process(TG4Event* event) {
     std::cout << "DetectorTPC::Process " << generatedHits
               << " hits generated" << std::endl;
 }
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

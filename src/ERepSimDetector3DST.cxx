@@ -42,6 +42,7 @@ void ERepSim::Detector3DST::Initialize() {
     std::shared_ptr<ERepSim::DAQMultiHit> multi(new ERepSim::DAQMultiHit);
     multi->SetTimeZero(
         ERepSim::Output::Get().Property["3DST.DAQ.TimeZero"]);
+    multi->UseThresholdTime();
     multi->SetIntegrationWindow(
         ERepSim::Output::Get().Property["3DST.DAQ.IntegrationWindow"]);
     multi->SetTimeCalibration(
@@ -65,6 +66,7 @@ void ERepSim::Detector3DST::Process(TG4Event* event) {
     fCurrentEvent = event;
     TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     std::cout << "Detector3DST::Process " << segments["volCube"].size()
+              << " segments"
               << std::endl;
     fResponse->Process(segments["volCube"]);
     if (fResponse->GetCarriers()) {
@@ -89,3 +91,9 @@ void ERepSim::Detector3DST::Process(TG4Event* event) {
     std::cout << "Detector3DST::Process " << generatedHits
               << " hits generated" << std::endl;
 }
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:
