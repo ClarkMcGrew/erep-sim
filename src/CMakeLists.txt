@@ -30,7 +30,7 @@ set(includes
   ERepSimDAQBase.hxx ERepSimDAQMultiHit.hxx
   ERepSimDetectorBase.hxx ERepSimDetector3DST.hxx
   ERepSimDetectorTPC.hxx ERepSimResponseTPC.hxx
-  ERepSimTPCdef.hxx
+  ERepSimDefs.hxx
   )
 
 # Make sure the current directories are available for the later
