@@ -33,6 +33,14 @@ public:
     /// Set the time zero.  This is the time the trigger occured.
     void SetTimeZero(double t) {fTimeZero = t;}
 
+    /// The hit time is the time that the threshold was crossed.  This is
+    /// appropriate for photon counting.
+    void UseThresholdTime() {fUseThresholdTime = true;}
+
+    /// The hit time is the average time of the integrated charge.  This is
+    /// appropriate for a TPC.
+    void UseAverageTime() {fUseThresholdTime = false;}
+
     /// Set the hit integration window.  This is the minimum time window for a
     /// hit.
     void SetIntegrationWindow(double t) {fIntegrationWindow = t;}
@@ -51,13 +59,16 @@ private:
     // Add impulses to the fDigiHits container.
     void DigitizeImpulses(int id, const ERepSim::Impulse::Container& impulses);
 
-    void DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit, double t, double q);
+    void DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit);
 
     // The charge threshold for the hit.
     double fThreshold;
 
     // The time of the trigger.
     double fTimeZero;
+
+    // Use the threshold crossing (true), or average (false) time.
+    bool fUseThresholdTime;
 
     // The integration window for the ADC.
     double fIntegrationWindow;
