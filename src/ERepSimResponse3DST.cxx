@@ -314,3 +314,9 @@ int ERepSim::Response3DST::GetSensorId(int c, int b, int p) {
     id = p + (id << 9);
     return id;
 }
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

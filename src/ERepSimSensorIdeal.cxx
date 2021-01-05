@@ -28,7 +28,9 @@ namespace {
 }
 
 void ERepSim::SensorIdeal::Process(const ERepSim::Carrier::Map& carriers) {
-    std::cout << "SensorIdeal::Process" << std::endl;
+    std::cout << "SensorIdeal::Process"
+              << " " << carriers.size() << " sensors"
+              << std::endl;
     for (ERepSim::Carrier::Map::const_iterator car = carriers.begin();
          car != carriers.end(); ++car) {
         AddImpulses(car->first, car->second);
@@ -58,3 +60,9 @@ void ERepSim::SensorIdeal::AddImpulses(
         (*fImpulses)[id].push_back(impulse);
     }
 }
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:
