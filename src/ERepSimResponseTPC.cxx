@@ -9,8 +9,11 @@
 
 #include <iostream>
 
-ERepSim::ResponseTPC::ResponseTPC(ERepSim::TPC_id id)
-    : ERepSim::ResponseBase("TPC"), fTpcId(id) {}
+ERepSim::ResponseTPC::ResponseTPC(const char* modelName,
+                                  const char* volumeName,
+                                  int id)
+    : ERepSim::ResponseBase(modelName),
+      fVolumeName(volumeName), fTpcId(id) {}
 
 ERepSim::ResponseTPC::~ResponseTPC() {}
 
@@ -28,9 +31,7 @@ bool ERepSim::ResponseTPC::RecurseGeometry() {
     if (name.find("3DSTPlane") != std::string::npos) return false;
     if (name.find("3DSTCube") != std::string::npos) return false;
 
-    const char* volTpc = ERepSim::TPCdef::volNames[fTpcId];
-
-    if (name.find(volTpc) != std::string::npos) {
+    if (name.find(fVolumeName) != std::string::npos) {
 
         const TGeoVolume* vol = node->GetVolume();
         const TGeoBBox* bbox = dynamic_cast<TGeoBBox*>(vol->GetShape());
@@ -83,9 +84,10 @@ void ERepSim::ResponseTPC::Initialize() {
     fNbPadsY = ceil((fYmax - fYmin)/fPadSizeY);
     fNbPadsZ = ceil((fZmax - fZmin)/fPadSizeZ);
 
-    ERepSim::Output::Get().Property["TPC.Response.StepSize"] = fStepSize;
-    ERepSim::Output::Get().Property["TPC.Response.WI"] = fWI;
-    ERepSim::Output::Get().Property["TPC.Response.GainMM"] = fGainMM;
+    ERepSim::Output::Get().Property[fModelName+".Response.StepSize"]
+        = fStepSize;
+    ERepSim::Output::Get().Property[fModelName+".Response.WI"] = fWI;
+    ERepSim::Output::Get().Property[fModelName+".Response.GainMM"] = fGainMM;
 
 }
 
@@ -109,7 +111,6 @@ void ERepSim::ResponseTPC::Process(const TG4HitSegmentContainer& segments) {
 void ERepSim::ResponseTPC::GenerateElectrons(
     int segId, const TG4HitSegment& seg,
     TLorentzVector generationPoint, double segLength) {
-    const float eVtofC = 6250.0*unit::femtocoulomb/unit::eV;
 
     if (generationPoint.Y() < fYmin
         || generationPoint.Y() > fYmax
@@ -296,7 +297,7 @@ void ERepSim::ResponseTPC::AddTrack(int segId, const TG4HitSegment& seg) {
 }
 
 int ERepSim::ResponseTPC::GetSensorId(int plane, int pad_y, int pad_z) {
-    int id = 25 + fTpcId;
+    int id = fTpcId;
     id = plane + (id << 3);
     id = pad_y + (id << 12);
     id = pad_z + (id << 12);

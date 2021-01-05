@@ -2,7 +2,6 @@
 #define ERepSimTPC_hxx_seen
 
 #include "ERepSimDetectorBase.hxx"
-#include "ERepSimTPCdef.hxx"
 
 namespace ERepSim {
     class DetectorTPC;
@@ -14,7 +13,10 @@ namespace ERepSim {
 
 class ERepSim::DetectorTPC: public ERepSim::DetectorBase {
 public:
-    DetectorTPC(ERepSim::TPC_id tpc_id);
+    DetectorTPC(const char* modelName,
+                const char* hitContainer,
+                const char* volumeName,
+                int tpc_id);
     virtual ~DetectorTPC();
 
     virtual void Initialize();
@@ -24,11 +26,18 @@ public:
     virtual void Reset();
 
 private:
-    ERepSim::TPC_id fTpcId;
-    const char* fHitContainer;
+    std::string fHitContainer;
+    std::string fVolumeName;
+    int fTpcId;
     std::shared_ptr<ERepSim::ResponseBase> fResponse;
     std::shared_ptr<ERepSim::SensorBase> fSensor;
     std::shared_ptr<ERepSim::DAQBase> fDAQ;
 };
 
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

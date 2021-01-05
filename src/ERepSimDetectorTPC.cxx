@@ -2,6 +2,7 @@
 #include "ERepSimResponseTPC.hxx"
 #include "ERepSimSensorIdeal.hxx"
 #include "ERepSimDAQMultiHit.hxx"
+#include "ERepSimUnits.hxx"
 
 #include "ERepSimOutput.hxx"
 
@@ -11,10 +12,17 @@
 
 #include <iostream>
 
-ERepSim::DetectorTPC::DetectorTPC(TPC_id tpc_id)
-    : DetectorBase("TPC"), fTpcId(tpc_id) {
-    fHitContainer = ERepSim::TPCdef::hitContainers[fTpcId];
-    std::cout << "DetectorTPC::Construct" << std::endl;
+ERepSim::DetectorTPC::DetectorTPC(const char* modelName,
+                                  const char* hitContainer,
+                                  const char* volumeName,
+                                  int tpc_id)
+    : DetectorBase(modelName),
+      fHitContainer(hitContainer),
+      fVolumeName(volumeName),
+      fTpcId(tpc_id) {
+    std::cout << "DetectorTPC::Construct"
+              << " " << fModelName
+              << " with segments " << fHitContainer << std::endl;
 }
 
 ERepSim::DetectorTPC::~DetectorTPC() {
@@ -24,33 +32,40 @@ ERepSim::DetectorTPC::~DetectorTPC() {
 void ERepSim::DetectorTPC::Initialize() {
     std::cout << "DetectorTPC::Initialize" << std::endl;
 
-    ERepSim::Output::Get().Property["TPC.SensorMask"] = (int) 0x78000000;
-    ERepSim::Output::Get().Property["TPC.SensorType"] = ((25 + fTpcId) << 27);
-    ERepSim::Output::Get().PropertyString["TPC.TG4HitContainer"] = "volCube";
+    ERepSim::Output::Get().Property[fModelName+".SensorMask"]
+        = (int) 0x78000000;
+    ERepSim::Output::Get().Property[fModelName+".SensorType"]
+        = (fTpcId << 27);
+    ERepSim::Output::Get().PropertyString[fModelName+".TG4HitContainer"]
+        = fHitContainer;
+    ERepSim::Output::Get().PropertyString[fModelName+".VolumeName"]
+        = fVolumeName;
 
-    fResponse.reset(new ERepSim::ResponseTPC(fTpcId));
+    fResponse.reset(new ERepSim::ResponseTPC(fModelName.c_str(),
+                                             fVolumeName.c_str(),
+                                             fTpcId));
     fResponse->Initialize();
 
     fSensor.reset(new ERepSim::SensorIdeal);
     fSensor->Initialize();
 
 
-    ERepSim::Output::Get().Property["TPC.DAQ.TimeZero"] = -100.0;
-    // ERepSim::Output::Get().Property["TPC.DAQ.IntegrationWindow"] = 200.0; //ns
-    ERepSim::Output::Get().Property["TPC.DAQ.IntegrationWindow"] = 50.0; //ns
-    ERepSim::Output::Get().Property["TPC.DAQ.DigitPerNanosecond"] = 2.0;
-    ERepSim::Output::Get().Property["TPC.DAQ.DigitPerCharge"] = 5.0;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"] = -100.0;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]
+        = 200.0*unit::ns;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"] = 2.0;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerCharge"] = 5.0;
 
     std::shared_ptr<ERepSim::DAQMultiHit> multi(new ERepSim::DAQMultiHit);
     multi->SetTimeZero(
-        ERepSim::Output::Get().Property["TPC.DAQ.TimeZero"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"]);
     multi->UseAverageTime();
     multi->SetIntegrationWindow(
-        ERepSim::Output::Get().Property["TPC.DAQ.IntegrationWindow"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]);
     multi->SetTimeCalibration(
-        ERepSim::Output::Get().Property["TPC.DAQ.DigitPerNanosecond"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"]);
     multi->SetChargeCalibration(
-        ERepSim::Output::Get().Property["TPC.DAQ.DigitPerCharge"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerCharge"]);
     fDAQ = multi;
     fDAQ->Initialize();
 

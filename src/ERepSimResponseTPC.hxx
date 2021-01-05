@@ -2,7 +2,7 @@
 #define ERepSimResponseTPC_hxx_seen
 
 #include "ERepSimResponseBase.hxx"
-#include "ERepSimTPCdef.hxx"
+
 #include <TG4HitSegment.h>
 
 namespace ERepSim {
@@ -13,7 +13,9 @@ namespace ERepSim {
 
 class ERepSim::ResponseTPC: public ERepSim::ResponseBase {
 public:
-    ResponseTPC(ERepSim::TPC_id id);
+    ResponseTPC(const char* modelName,
+                const char* volumeName,
+                int id);
     virtual ~ResponseTPC();
 
     virtual void Initialize();
@@ -30,15 +32,25 @@ private:
     void AddTrack(int segId, const TG4HitSegment& seg);
 
     //Computes the steps of size fStepSize between two points
-    std::vector<std::pair<TLorentzVector, double>> ComputeSteps(TLorentzVector& startPoint, TLorentzVector& stopPoint);
+    std::vector<std::pair<TLorentzVector, double>> ComputeSteps(
+        TLorentzVector& startPoint, TLorentzVector& stopPoint);
 
     //Generates a certain amount of electrons at a given position of a segment
-    void GenerateElectrons(int segId, const TG4HitSegment& seg, TLorentzVector generationPoint, double segLength);
+    void GenerateElectrons(int segId,
+                           const TG4HitSegment& seg,
+                           TLorentzVector generationPoint, double segLength);
+
     //Drifts the electrons towards anode (MM)
-    void DriftElectrons(int segId, const TG4HitSegment& seg, int sensId, double nbElectrons, TLorentzVector generationPoint);
+    void DriftElectrons(int segId, const TG4HitSegment& seg,
+                        int sensId, double nbElectrons,
+                        TLorentzVector generationPoint);
+
     //Computes the MM amplification
-    void MMAmplification(int segId, const TG4HitSegment& seg, int sensId, double nbElectrons,
-                        double avg_t, double sigma_t, TLorentzVector generationPoint);
+    void MMAmplification(int segId, const TG4HitSegment& seg,
+                         int sensId, double nbElectrons,
+                         double avg_t, double sigma_t,
+                         TLorentzVector generationPoint);
+
     //Applies charge spreading due to resistive pads
     void SpreadCharge(int segId, const TG4HitSegment& seg,
                     int sensId, double nbElectrons,
@@ -67,14 +79,17 @@ private:
     //Returns 3d length between two points
     double Length(const TLorentzVector& A, const TLorentzVector& B);
 
-    //Selects which of the 3 tpcs
-    ERepSim::TPC_id fTpcId;
+    // The volume defining the drift region for this TPC.
+    const char* fVolumeName;
 
-    //Pad sizes (hardcoded)
+    // Selects which of the 3 tpcs
+    int fTpcId;
+
+    // Pad sizes (hardcoded)
     double fPadSizeY;
     double fPadSizeZ;
 
-    //Dimensions of the tpc
+    // Dimensions of the tpc
     double fXmin;
     double fXmax;
     double fYmin;
@@ -83,16 +98,22 @@ private:
     double fZmax;
     double fCathodeX;
 
-    //Number of pads
+    // Number of pads
     int fNbPadsY;
     int fNbPadsZ;
 
-    //Step size for electron generation along tracks
+    // Step size for electron generation along tracks
     double fStepSize;
-    //Ionisation coefficient of gas
+    // Ionisation coefficient of gas
     double fWI;
-    //MM gain
+    // MM gain
     double fGainMM;
 };
 
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

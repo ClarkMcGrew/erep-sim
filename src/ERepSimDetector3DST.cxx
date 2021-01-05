@@ -2,6 +2,7 @@
 #include "ERepSimResponse3DST.hxx"
 #include "ERepSimSensorIdeal.hxx"
 #include "ERepSimDAQMultiHit.hxx"
+#include "ERepSimUnits.hxx"
 
 #include "ERepSimOutput.hxx"
 
@@ -23,9 +24,11 @@ ERepSim::Detector3DST::~Detector3DST() {
 void ERepSim::Detector3DST::Initialize() {
     std::cout << "Detector3DST::Initialize" << std::endl;
 
-    ERepSim::Output::Get().Property["3DST.SensorMask"] = (int) 0x78000000;
-    ERepSim::Output::Get().Property["3DST.SensorType"] = (13 << 27);
-    ERepSim::Output::Get().PropertyString["3DST.TG4HitContainer"] = "volCube";
+    ERepSim::Output::Get().Property[fModelName+".SensorMask"]
+        = (int) 0x78000000;
+    ERepSim::Output::Get().Property[fModelName+".SensorType"] = (13 << 27);
+    ERepSim::Output::Get().PropertyString[fModelName+".TG4HitContainer"]
+        = "volCube";
 
     fResponse.reset(new ERepSim::Response3DST);
     fResponse->Initialize();
@@ -33,22 +36,22 @@ void ERepSim::Detector3DST::Initialize() {
     fSensor.reset(new ERepSim::SensorIdeal);
     fSensor->Initialize();
 
-
-    ERepSim::Output::Get().Property["3DST.DAQ.TimeZero"] = -100.0;
-    ERepSim::Output::Get().Property["3DST.DAQ.IntegrationWindow"] = 50.0; //ns
-    ERepSim::Output::Get().Property["3DST.DAQ.DigitPerNanosecond"] = 2.0;
-    ERepSim::Output::Get().Property["3DST.DAQ.DigitPerCharge"] = 5.0;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"] = -100.0;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]
+        = 50.0*unit::ns;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"] = 2.0;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerCharge"] = 5.0;
 
     std::shared_ptr<ERepSim::DAQMultiHit> multi(new ERepSim::DAQMultiHit);
     multi->SetTimeZero(
-        ERepSim::Output::Get().Property["3DST.DAQ.TimeZero"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"]);
     multi->UseThresholdTime();
     multi->SetIntegrationWindow(
-        ERepSim::Output::Get().Property["3DST.DAQ.IntegrationWindow"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]);
     multi->SetTimeCalibration(
-        ERepSim::Output::Get().Property["3DST.DAQ.DigitPerNanosecond"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"]);
     multi->SetChargeCalibration(
-        ERepSim::Output::Get().Property["3DST.DAQ.DigitPerCharge"]);
+        ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerCharge"]);
     fDAQ = multi;
     fDAQ->Initialize();
 

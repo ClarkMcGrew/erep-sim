@@ -3,6 +3,7 @@
 #include "ERepSimDetectorBase.hxx"
 #include "ERepSimDetector3DST.hxx"
 #include "ERepSimDetectorTPC.hxx"
+#include "ERepSimDefs.hxx"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -76,15 +77,25 @@ int main(int argc, char **argv) {
     detectors.push_back(
         std::shared_ptr<ERepSim::Detector3DST>(
             new ERepSim::Detector3DST));
+
     detectors.push_back(
         std::shared_ptr<ERepSim::DetectorTPC>(
-            new ERepSim::DetectorTPC(ERepSim::TPC_id::DOWNSTREAM)));
+            new ERepSim::DetectorTPC("TPC",
+                                     "voltpc",
+                                     "volTpc_PV_0",
+                                     ERepSim::Def::Detector::kTPC)));
     detectors.push_back(
         std::shared_ptr<ERepSim::DetectorTPC>(
-            new ERepSim::DetectorTPC(ERepSim::TPC_id::TOP)));
+            new ERepSim::DetectorTPC("TopTPC",
+                                     "voltpcTop",
+                                     "volTpcTop_PV_0",
+                                     ERepSim::Def::Detector::kTopTPC)));
     detectors.push_back(
         std::shared_ptr<ERepSim::DetectorTPC>(
-            new ERepSim::DetectorTPC(ERepSim::TPC_id::BOTTOM)));
+            new ERepSim::DetectorTPC("BotTPC",
+                                     "voltpcBot",
+                                     "volTpcBot_PV_0",
+                                     ERepSim::Def::Detector::kBotTPC)));
 
     std::unique_ptr<TFile> outputFile(new TFile(outputName.c_str(),"recreate"));
     ERepSim::Output::Get().CreateTrees();
@@ -117,3 +128,9 @@ int main(int argc, char **argv) {
 
     ERepSim::Output::Get().Write();
 }
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:
