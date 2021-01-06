@@ -123,6 +123,8 @@ int main(int argc, char **argv) {
             detector->Process(edepsimEvent);
         }
 
+        detectors.front()->Validate();
+
         ERepSim::Output::Get().Fill();
     }
 

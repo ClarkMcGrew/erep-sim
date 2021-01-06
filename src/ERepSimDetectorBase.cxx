@@ -9,14 +9,81 @@
 #include <iostream>
 #include <set>
 
+namespace {
+    std::map<int, const TG4HitSegment*> gDebugIdToHitSegment;
+    std::map<const TG4HitSegment*, int> gDebugHitSegmentToId;
+}
+
 ERepSim::DetectorBase::DetectorBase(const char *modelname)
     : fModelName(modelname) {}
 
 ERepSim::DetectorBase::~DetectorBase() { }
 
+void ERepSim::DetectorBase::Validate() {
+    for (std::map<int, const TG4HitSegment*>::iterator itoh
+             = gDebugIdToHitSegment.begin();
+         itoh != gDebugIdToHitSegment.end();
+         ++itoh) {
+        std::map<const TG4HitSegment*, int>::iterator  htoi
+            = gDebugHitSegmentToId.find(itoh->second);
+        if (htoi == gDebugHitSegmentToId.end()) {
+            std::cout << "Hit segment is missing for id: "
+                      << itoh->first
+                      << std::endl;
+            throw std::runtime_error("Missing segment identifiers");
+        }
+        if (htoi->second != itoh->first || htoi->first != itoh->second) {
+            std::cout << "Id is duplicated for hit segment." << std::endl;
+            std::cout << "itoh->first " << itoh->first
+                      << " htoi->second " << htoi->second
+                      << std::endl;
+            std::cout << "itoh->second " << (long int) itoh->second
+                      << " htoi->first " << (long int) htoi->first
+                      << std::endl;
+            throw std::runtime_error("Duplicate segment identifiers");
+        }
+    }
+
+    for (std::map<const TG4HitSegment*, int>::iterator htoi
+             = gDebugHitSegmentToId.begin();
+         htoi != gDebugHitSegmentToId.end();
+         ++htoi) {
+        std::map<int, const TG4HitSegment*>::iterator  itoh
+            = gDebugIdToHitSegment.find(htoi->second);
+        if (itoh == gDebugIdToHitSegment.end()) {
+            std::cout << "idenfitier is missing for hit segment: "
+                      << htoi->second
+                      << std::endl;
+            throw std::runtime_error("Missing segment identifiers");
+        }
+        if (htoi->second != itoh->first || htoi->first != itoh->second) {
+            std::cout << "Id is duplicated for hit segment." << std::endl;
+            std::cout << "itoh->first: " << itoh->first
+                      << " htoi->second: " << htoi->second
+                      << std::endl;
+            std::cout << "itoh->second: " << (long int) itoh->second
+                      << " htoi->first: " << (long int) htoi->first
+                      << std::endl;
+            throw std::runtime_error("Duplicate segment identifiers");
+        }
+    }
+
+    if (gDebugIdToHitSegment.size() != gDebugHitSegmentToId.size()) {
+        std::cout << "gDebugIdToHitSegment.size(): "
+                  << gDebugIdToHitSegment.size()
+                  << std::endl;
+        std::cout << "gDebugHitSegmentToId.size(): "
+                  << gDebugHitSegmentToId.size()
+              << std::endl;
+        throw std::runtime_error("Missing identifiers or segments");
+    }
+}
+
 void ERepSim::DetectorBase::Reset() {
     std::cout << "DetectorBase::Reset" << std::endl;
     fCurrentEvent = NULL;
+    gDebugIdToHitSegment.clear();
+    gDebugHitSegmentToId.clear();
 }
 
 void ERepSim::DetectorBase::PackDigiHit(const ERepSim::DigiHit& hit) {
@@ -53,6 +120,8 @@ void ERepSim::DetectorBase::PackImpulses(
              c != carriers.end(); ++c) {
             segmentIds.insert(std::make_pair((*c)->GetSegmentId(),
                                              (*c)->GetSegment()));
+            gDebugIdToHitSegment[(*c)->GetSegmentId()] = (*c)->GetSegment();
+            gDebugHitSegmentToId[(*c)->GetSegment()] = (*c)->GetSegmentId();
         }
     }
     std::set<int> contrib;

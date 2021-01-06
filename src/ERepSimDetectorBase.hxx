@@ -39,6 +39,9 @@ public:
 
     const std::string& GetModelName() const {return fModelName;}
 
+    /// Apply validation to internal tables.  This is for debugging only!
+    void Validate();
+
 protected:
 
     /// What to say.  It's the name of the response model.
