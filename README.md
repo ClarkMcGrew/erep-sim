@@ -1,10 +1,11 @@
 # erep-sim
 
 A library to support simulating the energy response generated using
-edep-sim.  While this is initially simulationg the 3DST scintillator
+edep-sim.  While this is initially simulated the 3DST scintillator
 cube detector, it is using the same techiques (and almost the same
 class structure) as the T2K elecSim.  It is well suited to simulated
-any detector (that is likely to be used) in the DUNE ND.
+any detector (that is likely to be used) in the DUNE ND.  The current
+simulation handles both the 3DST and the SAND TPCs.
 
 ## Requirements
 
