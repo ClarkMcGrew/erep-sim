@@ -33,6 +33,13 @@ public:
     /// associated with that sensor.
     typedef std::map<int,ERepSim::Carrier::Container> Map;
 
+    /// Construct a carrier.  This takes an identifier for the segment that is
+    /// creating the carrier, and the *address* of the segment.  It needs to
+    /// be the address because the segment may not exist, and the
+    /// non-existance is flagged by a NULL pointer.  There must be a
+    /// one-to-one relationship between the segmentId, and the hitSegment
+    /// address (with the exception of NULL hitSegment values).  A null
+    /// hitSegment should have a segmentId of zero.
     Carrier(int sensorId, int segmentId,
             const TG4HitSegment* hitSegment = NULL);
     virtual ~Carrier();
@@ -107,3 +114,9 @@ private:
 };
 
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

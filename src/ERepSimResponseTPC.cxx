@@ -101,7 +101,7 @@ void ERepSim::ResponseTPC::Process(const TG4HitSegmentContainer& segments) {
 
     for (std::size_t segId = 0; segId<segments.size(); ++segId) {
         const TG4HitSegment& seg = segments[segId];
-        AddTrack(segId, seg);
+        AddTrack(segId+1, seg);
     }
 
     std::cout << "ResponseTPC::Process " << CountCarriers()

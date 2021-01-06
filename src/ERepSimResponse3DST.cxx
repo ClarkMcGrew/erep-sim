@@ -138,7 +138,7 @@ void ERepSim::Response3DST::Process(const TG4HitSegmentContainer& segments) {
         avg = 0.5*segment.GetStart() + 0.5*segment.GetStop();
         double deposit = segment.GetSecondaryDeposit();
         if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
-        AddDeposit(segId,&segment,avg,deposit);
+        AddDeposit(segId+1,&segment,avg,deposit);
     }
     std::cout << "Response3DST::Process " << CountCarriers()
               << " carriers generated" << std::endl;
