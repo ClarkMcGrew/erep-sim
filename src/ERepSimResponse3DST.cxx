@@ -133,12 +133,13 @@ void ERepSim::Response3DST::Process(const TG4HitSegmentContainer& segments) {
     std::cout << "Response3DST::Process " << segments.size() << " segments"
               << std::endl;
     TLorentzVector avg;
-    for (std::size_t segId = 0; segId<segments.size(); ++segId) {
-        const TG4HitSegment& segment = segments[segId];
+    for (std::size_t i = 0; i < segments.size(); ++i) {
+        const TG4HitSegment& segment = segments[i];
+        int segId = GetNextSegmentIdentifier();
         avg = 0.5*segment.GetStart() + 0.5*segment.GetStop();
         double deposit = segment.GetSecondaryDeposit();
         if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
-        AddDeposit(segId+1,&segment,avg,deposit);
+        AddDeposit(segId, &segment, avg, deposit);
     }
     std::cout << "Response3DST::Process " << CountCarriers()
               << " carriers generated" << std::endl;

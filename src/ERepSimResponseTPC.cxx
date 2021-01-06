@@ -99,9 +99,10 @@ void ERepSim::ResponseTPC::Process(const TG4HitSegmentContainer& segments) {
     std::cout << "ResponseTPC::Process " << segments.size() << " segments"
               << std::endl;
 
-    for (std::size_t segId = 0; segId<segments.size(); ++segId) {
-        const TG4HitSegment& seg = segments[segId];
-        AddTrack(segId+1, seg);
+    for (std::size_t i = 0; i<segments.size(); ++i) {
+        const TG4HitSegment& seg = segments[i];
+        int segId = GetNextSegmentIdentifier();
+        AddTrack(segId, seg);
     }
 
     std::cout << "ResponseTPC::Process " << CountCarriers()
