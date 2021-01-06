@@ -41,6 +41,17 @@ public:
 
     const std::string& GetModelName() const {return fModelName;}
 
+    int GetNextSegmentIdentifier() {
+        if (fSegmentIdentifier < 0) fSegmentIdentifier = 0;
+        ++fSegmentIdentifier;
+        if (fSegmentIdentifier > 1000000) fSegmentIdentifier = 1;
+        return fSegmentIdentifier;
+    }
+
+    int GetCurrentSegmentIdentifier() {
+        return fSegmentIdentifier;
+    }
+
 protected:
 
     /// What to say.  It's the name of the response model.
@@ -49,5 +60,14 @@ protected:
     /// The map of carriers.  The derived implementation classes should access
     /// this directly.
     std::shared_ptr<ERepSim::Carrier::Map> fCarriers;
+
+private:
+    static int fSegmentIdentifier;
 };
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:
