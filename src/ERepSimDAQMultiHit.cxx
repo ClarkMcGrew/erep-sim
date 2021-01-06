@@ -75,12 +75,18 @@ void ERepSim::DAQMultiHit::DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit) {
     double qHit = 0.0;
     double tHit = 1E+20;
     if (fUseThresholdTime) {
+        // Find the threshold crossing...
+        double q = 0.0;
         for (std::size_t i = 0; i< impulses.size(); ++i) {
-            qHit += impulses[i]->GetCharge();
-            if (qHit > fThreshold) {
+            q += impulses[i]->GetCharge();
+            if (q > fThreshold) {
                 tHit = impulses[i]->GetTime();
                 break;
             }
+        }
+        // Get the total charge.
+        for (std::size_t i = 0; i< impulses.size(); ++i) {
+            qHit += impulses[i]->GetCharge();
         }
     }
     else {
