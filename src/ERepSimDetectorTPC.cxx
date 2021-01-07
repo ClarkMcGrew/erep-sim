@@ -52,7 +52,7 @@ void ERepSim::DetectorTPC::Initialize() {
 
     ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"] = -100.0;
     ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]
-        = 200.0*unit::ns;
+        = 50.0*unit::ns;
     ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"] = 2.0;
     ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerCharge"] = 5.0;
 
@@ -62,6 +62,7 @@ void ERepSim::DetectorTPC::Initialize() {
     multi->UseAverageTime();
     multi->SetIntegrationWindow(
         ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]);
+    multi->SetDeadTime(0.0);
     multi->SetTimeCalibration(
         ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"]);
     multi->SetChargeCalibration(
