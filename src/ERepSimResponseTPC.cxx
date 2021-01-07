@@ -123,15 +123,19 @@ void ERepSim::ResponseTPC::GenerateElectrons(
 
     int plane;
 
-    if (generationPoint.X() < fCathodeX) {
+    double cathodeThickness = 1.0*unit::mm;
+    if (generationPoint.X() < fCathodeX - 0.5*cathodeThickness) {
         plane = 0;
     }
-    else {
+    else if (generationPoint.X() > fCathodeX + 0.5*cathodeThickness) {
         plane = 1;
     }
+    else {
+        return;
+    }
 
-    int pad_i = floor((generationPoint.Y() - fYmin)/fPadSizeY);
-    int pad_j = floor((generationPoint.Z() - fZmin)/fPadSizeZ);
+    int pad_i = std::floor((generationPoint.Y() - fYmin)/fPadSizeY);
+    int pad_j = std::floor((generationPoint.Z() - fZmin)/fPadSizeZ);
 
     int sensId = GetSensorId(plane, pad_i, pad_j);
 
@@ -184,10 +188,12 @@ void ERepSim::ResponseTPC::SpreadCharge(int segId, const TG4HitSegment& seg,
     // instantaneous charge spreading, to be improved
     std::vector<std::pair<int, int>> coord_change;
     coord_change.push_back(std::make_pair(0, 0));
+#ifdef APPLY_SPREAD
     coord_change.push_back(std::make_pair(0, 1));
     coord_change.push_back(std::make_pair(0, -1));
     coord_change.push_back(std::make_pair(1, 0));
     coord_change.push_back(std::make_pair(-1, 0));
+#endif
 
     for (std::vector<std::pair<int, int>>::iterator xy = coord_change.begin();
          xy != coord_change.end(); ++xy) {
@@ -270,6 +276,26 @@ void ERepSim::ResponseTPC::AddTrack(int segId, const TG4HitSegment& seg) {
     const TLorentzVector& start = seg.GetStart();
     const TLorentzVector& stop = seg.GetStop();
 
+#define BOGO_STEPPING
+#ifdef BOGO_STEPPING
+    double totalLength = Length(stop,start);
+    double targetStep = 0.5*unit::mm;
+    int totalSteps = totalLength/targetStep;
+    double stepLength = totalLength/totalSteps;
+    if (totalSteps < 2) stepLength = totalLength;
+    for (double dL = stepLength/2.0; dL < totalLength; dL += stepLength) {
+        double t = dL/totalLength;
+        TLorentzVector generationPoint = start + (stop-start)*t;
+        double spreadSteps = 50.0;
+        double spreadSigma = 3.0*unit::mm;
+        for (int i = 0; i < spreadSteps; ++i) {
+            TLorentzVector spreadPoint(generationPoint);
+            spreadPoint[1] += spreadSigma*gRandom->Gaus();
+            spreadPoint[2] += spreadSigma*gRandom->Gaus();
+            GenerateElectrons(segId, seg, spreadPoint, stepLength/spreadSteps);
+        }
+    }
+#else
     std::vector<TLorentzVector> iterationPoints;
     iterationPoints.push_back(start);
 
@@ -295,6 +321,7 @@ void ERepSim::ResponseTPC::AddTrack(int segId, const TG4HitSegment& seg) {
             GenerateElectrons(segId, seg, step->first, step->second);
         }
     }
+#endif
 }
 
 int ERepSim::ResponseTPC::GetSensorId(int plane, int pad_y, int pad_z) {
@@ -306,7 +333,7 @@ int ERepSim::ResponseTPC::GetSensorId(int plane, int pad_y, int pad_z) {
 }
 
 void ERepSim::ResponseTPC::GetPadInfo(int sensId,
-                                      int &plane,
+                                      int& plane,
                                       int& pad_y,
                                       int& pad_z) {
     pad_z = sensId & ((1 << 12) - 1);
