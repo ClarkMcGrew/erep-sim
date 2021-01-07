@@ -49,6 +49,11 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
         if (id != (*i)->GetSensorId()) {
             throw std::runtime_error("DAQMultiHit::DigitizeImpulses: bad id");
         }
+        if ((*i)->GetTime() < hitT + fIntegrationWindow) {
+            digiHit->AddImpulse(*i);
+            hitQ += (*i)->GetCharge();
+            continue;
+        }
         if ((*i)->GetTime() > hitT + fIntegrationWindow + fDeadTime) {
             // Digitize, calibrate and move to the next hit.
             if (hitQ > fThreshold) {
@@ -60,10 +65,8 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
             digiHit->SetPosition((*i)->GetPosition());
             hitT = (*i)->GetTime();
             hitQ = 0;
+            continue;
         }
-        if ((*i)->GetTime() > hitT + fIntegrationWindow) continue;
-        digiHit->AddImpulse(*i);
-        hitQ += (*i)->GetCharge();
     }
     if (hitQ < fThreshold) return;
     DigitizeHit(digiHit);
@@ -74,6 +77,7 @@ void ERepSim::DAQMultiHit::DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit) {
     const ERepSim::Impulse::Container& impulses = hit->GetImpulses();
     double qHit = 0.0;
     double tHit = 1E+20;
+    double tWidth = 0.0;
     if (fUseThresholdTime) {
         // Find the threshold crossing...
         double q = 0.0;
@@ -88,16 +92,28 @@ void ERepSim::DAQMultiHit::DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit) {
         for (std::size_t i = 0; i< impulses.size(); ++i) {
             qHit += impulses[i]->GetCharge();
         }
+        tWidth = 1.0/fDigitsPerNanosecond;
     }
     else {
         qHit = 0.0;
         tHit = 0.0;
+        tWidth = 0.0;
         for (std::size_t i = 0; i< impulses.size(); ++i) {
             qHit += impulses[i]->GetCharge();
-            tHit += impulses[i]->GetCharge()*impulses[i]->GetTime();
+            double t = impulses[i]->GetTime();
+            tHit += impulses[i]->GetCharge()*t;
+            tWidth += impulses[i]->GetCharge()*t*t;
         }
         if (qHit > fThreshold) {
             tHit /= qHit;
+            tWidth /= qHit;
+            tWidth = tWidth - tHit*tHit;
+            if (tWidth < 1.0/fDigitsPerNanosecond) {
+                tWidth = 1.0/fDigitsPerNanosecond;
+            }
+            else {
+                tWidth = std::sqrt(tWidth);
+            }
         }
         else {
             tHit = 1E+20;
@@ -112,7 +128,7 @@ void ERepSim::DAQMultiHit::DigitizeHit(std::shared_ptr<ERepSim::DigiHit> hit) {
     hit->GetDigiTimes().push_back(iTime);
     hit->GetDigiCharges().push_back(iCharge);
     hit->GetTimes().push_back(cTime);
-    hit->GetTimeWidths().push_back(1.0/fDigitsPerNanosecond);
+    hit->GetTimeWidths().push_back(tWidth);
     hit->GetCharges().push_back(cCharge);
 }
 
