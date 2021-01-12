@@ -45,6 +45,12 @@ public:
     /// hit.
     void SetIntegrationWindow(double t) {fIntegrationWindow = t;}
 
+    /// @{ Set whether the end of the integration window should "slide" until
+    /// the incoming charge is below the threshold.
+    void UseFixedWindow() {fUseSlidingWindow = false;}
+    void UseSlidingWindow() {fUseSlidingWindow = true;}
+    // @}
+
     /// Set the dead time between hits on a channel.  This is the minimum time
     /// window for a hit.
     void SetDeadTime(double t) {fDeadTime = t;}
@@ -70,6 +76,10 @@ private:
     // Use the threshold crossing (true), or average (false) time.
     bool fUseThresholdTime;
 
+    // Use a sliding integration window (true) or a fixed time window (false)
+    // for the ADC.
+    bool fUseSlidingWindow;
+
     // The integration window for the ADC.
     double fIntegrationWindow;
 
@@ -83,3 +93,9 @@ private:
     double fDigitsPerCharge;
 };
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

@@ -7,6 +7,7 @@
 ERepSim::DAQMultiHit::DAQMultiHit()
     : ERepSim::DAQBase("MultiHit"),
       fThreshold(2.5), fTimeZero(0), fUseThresholdTime(true),
+      fUseSlidingWindow(false),
       fIntegrationWindow(50.0), fDeadTime(10.0),
       fDigitsPerNanosecond(10.0), fDigitsPerCharge(10.0) {}
 
@@ -44,6 +45,7 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
     digiHit->SetPosition(impulses.front()->GetPosition());
     double hitT = impulses.front()->GetTime();
     double hitQ = 0.0;
+    ERepSim::Impulse::Container::const_iterator openWindow = impulses.begin();
     for (ERepSim::Impulse::Container::const_iterator i = impulses.begin();
          i != impulses.end(); ++i) {
         if (id != (*i)->GetSensorId()) {
@@ -52,6 +54,21 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
         if ((*i)->GetTime() < hitT + fIntegrationWindow) {
             digiHit->AddImpulse(*i);
             hitQ += (*i)->GetCharge();
+            if (fUseSlidingWindow) {
+                double qWindow = 0.0;
+                do {
+                    qWindow = 0.0;
+                    for (ERepSim::Impulse::Container::const_iterator hWindow
+                             = openWindow;
+                         hWindow != i; ++hWindow) {
+                        qWindow += (*hWindow)->GetCharge();
+                    }
+                    if (qWindow > fThreshold) {
+                        hitT = (*openWindow)->GetTime();
+                        ++openWindow;
+                    }
+                } while (qWindow > fThreshold);
+            }
             continue;
         }
         if ((*i)->GetTime() > hitT + fIntegrationWindow + fDeadTime) {
@@ -64,6 +81,7 @@ void ERepSim::DAQMultiHit::DigitizeImpulses(
             digiHit.reset(new ERepSim::DigiHit(id));
             digiHit->SetPosition((*i)->GetPosition());
             hitT = (*i)->GetTime();
+            openWindow = i;
             hitQ = 0;
             continue;
         }
