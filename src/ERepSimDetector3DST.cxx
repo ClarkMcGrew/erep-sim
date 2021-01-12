@@ -39,6 +39,8 @@ void ERepSim::Detector3DST::Initialize() {
     ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"] = -100.0;
     ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]
         = 50.0*unit::ns;
+    ERepSim::Output::Get().Property[fModelName+".DAQ.Threshold"]
+        = 3.0;
     ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"] = 2.0;
     ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerCharge"] = 5.0;
 
@@ -46,8 +48,12 @@ void ERepSim::Detector3DST::Initialize() {
     multi->SetTimeZero(
         ERepSim::Output::Get().Property[fModelName+".DAQ.TimeZero"]);
     multi->UseThresholdTime();
+    multi->SetThreshold(
+        ERepSim::Output::Get().Property[fModelName+".DAQ.Threshold"]);
+    multi->UseFixedWindow();
     multi->SetIntegrationWindow(
         ERepSim::Output::Get().Property[fModelName+".DAQ.IntegrationWindow"]);
+    multi->SetDeadTime(50*unit::ns);
     multi->SetTimeCalibration(
         ERepSim::Output::Get().Property[fModelName+".DAQ.DigitPerNanosecond"]);
     multi->SetChargeCalibration(
