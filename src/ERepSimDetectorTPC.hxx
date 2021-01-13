@@ -21,7 +21,7 @@ public:
 
     virtual void Initialize();
 
-    virtual void Process(TG4Event* event);
+    virtual void Process(int entry, TG4Event* event);
 
     virtual void Reset();
 

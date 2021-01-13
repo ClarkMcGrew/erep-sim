@@ -20,6 +20,7 @@ set(source
   ERepSimDAQBase.cxx ERepSimDAQMultiHit.cxx
   ERepSimDetectorBase.cxx ERepSimDetector3DST.cxx
   ERepSimDetectorTPC.cxx ERepSimResponseTPC.cxx
+  ERepSimDetectorECal.cxx
   )
 
 set(includes
@@ -30,6 +31,7 @@ set(includes
   ERepSimDAQBase.hxx ERepSimDAQMultiHit.hxx
   ERepSimDetectorBase.hxx ERepSimDetector3DST.hxx
   ERepSimDetectorTPC.hxx ERepSimResponseTPC.hxx
+  ERepSimDetectorECal.hxx
   ERepSimDefs.hxx
   )
 

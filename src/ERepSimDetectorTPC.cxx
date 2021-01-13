@@ -84,7 +84,7 @@ void ERepSim::DetectorTPC::Reset() {
     fDAQ->Reset();
 }
 
-void ERepSim::DetectorTPC::Process(TG4Event* event) {
+void ERepSim::DetectorTPC::Process(int entry, TG4Event* event) {
     fCurrentEvent = event;
     TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     std::cout << "DetectorTPC::Process " << segments[fHitContainer].size()

@@ -17,7 +17,7 @@ public:
 
     virtual void Initialize();
 
-    virtual void Process(TG4Event* event);
+    virtual void Process(int entry, TG4Event* event);
 
     virtual void Reset();
 
@@ -27,5 +27,10 @@ private:
     std::shared_ptr<ERepSim::SensorBase> fSensor;
     std::shared_ptr<ERepSim::DAQBase> fDAQ;
 };
-
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

@@ -71,7 +71,7 @@ void ERepSim::Detector3DST::Reset() {
     fDAQ->Reset();
 }
 
-void ERepSim::Detector3DST::Process(TG4Event* event) {
+void ERepSim::Detector3DST::Process(int entry, TG4Event* event) {
     fCurrentEvent = event;
     TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     std::cout << "Detector3DST::Process " << segments["volCube"].size()

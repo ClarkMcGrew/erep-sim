@@ -93,8 +93,7 @@ void ERepSim::DetectorBase::PackDigiHit(const ERepSim::DigiHit& hit) {
     ERepSim::Output::Get().HitY.push_back(hit.GetPosition().Y());
     ERepSim::Output::Get().HitZ.push_back(hit.GetPosition().Z());
     ERepSim::Output::Get().HitTime.push_back(hit.GetTime());
-    ERepSim::Output::Get().HitTimeWidth.push_back(
-        hit.GetTimeWidth());
+    ERepSim::Output::Get().HitTimeWidth.push_back(hit.GetTimeWidth());
     ERepSim::Output::Get().HitCharge.push_back(hit.GetCharge());
     ERepSim::Output::Get().HitSegmentBegin.push_back(
         ERepSim::Output::Get().SegmentIds.size());

@@ -8,7 +8,7 @@
 namespace ERepSim {
     class DetectorECal;
 }
-class tDigit;
+class ERepSimECalDigit;
 
 class ERepSim::DetectorECal: public ERepSim::DetectorBase {
 public:
@@ -22,7 +22,7 @@ public:
     virtual void Reset();
 
 private:
-    tDigit* fDigitTree;
+    ERepSimECalDigit* fDigitTree;
 };
 #endif
 

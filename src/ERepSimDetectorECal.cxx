@@ -5,8 +5,8 @@
 
 #include "ERepSimOutput.hxx"
 
-#define tDigit_cxx
-#include "tDigit.h"
+#define ERepSimECalDigit_cxx
+#include "ERepSimECalDigit.hxx"
 
 #include <TG4Event.h>
 
@@ -19,7 +19,7 @@
 
 ERepSim::DetectorECal::DetectorECal(TTree* tDigitTree)
     : DetectorBase("ECal") {
-    fDigitTree = new tDigit(tDigitTree);
+    fDigitTree = new ERepSimECalDigit(tDigitTree);
 }
 
 ERepSim::DetectorECal::~DetectorECal() {

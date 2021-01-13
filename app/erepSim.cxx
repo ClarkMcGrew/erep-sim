@@ -1,6 +1,7 @@
 #include <TG4Event.h>
 #include "ERepSimOutput.hxx"
 #include "ERepSimDetectorBase.hxx"
+#include "ERepSimDetectorECal.hxx"
 #include "ERepSimDetector3DST.hxx"
 #include "ERepSimDetectorTPC.hxx"
 #include "ERepSimDefs.hxx"
@@ -72,7 +73,20 @@ int main(int argc, char **argv) {
         std::runtime_error("No EDepSimGeometry");
     }
 
+    // Check to see if the ECal tree in in the input file.
+    TTree* ecalDigitTree = dynamic_cast<TTree*>(inputFile->Get("tDigit"));
+    if (ecalDigitTree) {
+        std::cout << "File has the ECal electronics simulation"
+                  << std::endl;
+    }
+
     std::vector<std::shared_ptr<ERepSim::DetectorBase>> detectors;
+
+    if (ecalDigitTree) {
+        detectors.push_back(
+            std::shared_ptr<ERepSim::DetectorECal>(
+                new ERepSim::DetectorECal(ecalDigitTree)));
+    }
 
     detectors.push_back(
         std::shared_ptr<ERepSim::Detector3DST>(
@@ -110,7 +124,6 @@ int main(int argc, char **argv) {
 
     totalEntries = std::min(totalEntries,maxEntries);
     for (int entry = 0; entry < totalEntries; ++entry) {
-
         edepsimTree->GetEntry(entry);
 
         for (auto detector: detectors) {detector->Reset();}
@@ -120,7 +133,7 @@ int main(int argc, char **argv) {
                   << "/" << ERepSim::Output::Get().EventId<< std::endl;
 
         for (auto detector: detectors) {
-            detector->Process(edepsimEvent);
+            detector->Process(entry, edepsimEvent);
         }
 
         detectors.front()->Validate();

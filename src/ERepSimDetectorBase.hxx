@@ -29,7 +29,7 @@ public:
     virtual void Initialize() = 0;
 
     /// Process a list of segments.
-    virtual void Process(TG4Event* event) = 0;
+    virtual void Process(int entry, TG4Event* event) = 0;
 
     /// Reset the simulation between events.  This will probably need to be
     /// overloaded by the derived classes, but the base class Reset should
