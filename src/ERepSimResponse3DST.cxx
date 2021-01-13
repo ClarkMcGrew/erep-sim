@@ -1,5 +1,6 @@
 #include "ERepSimResponse3DST.hxx"
 #include "ERepSimOutput.hxx"
+#include "ERepSimDefs.hxx"
 
 #include <TGeoManager.h>
 #include <TGeoNode.h>
@@ -309,7 +310,7 @@ int ERepSim::Response3DST::GetSensorId(int c, int b, int p) {
         ++cnt;
     }
     // if (cnt != 1) throw std::runtime_error("Not a sensor");
-    int id = 13;
+    int id = ERepSim::Def::Detector::k3DST;
     id = c + (id << 9);
     id = b + (id << 9);
     id = p + (id << 9);
