@@ -39,6 +39,8 @@ void ERepSim::DetectorECal::Process(int entry, TG4Event* event) {
     if (!fDigitTree) return;
     fDigitTree->GetEntry(entry);
 
+    fCurrentEvent = event;
+
     int generatedHits = 0;
     std::cout << "DetectorECal::Process " << fDigitTree->cell_
               << " cells"
