@@ -10,10 +10,12 @@ namespace ERepSim {
         namespace Detector {
             enum Detectors {
                 kReserved = 0,
+                kECal = 12,
                 k3DST = 13,
                 kTPC = 25,      // The downstream TPC
                 kTopTPC = 26,
                 kBotTPC = 27,
+                kSTT = 31,
             };
         }
     }
