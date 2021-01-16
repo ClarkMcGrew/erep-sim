@@ -41,7 +41,7 @@ public:
 
     const std::string& GetModelName() const {return fModelName;}
 
-    int GetNextSegmentIdentifier() {
+    static int GetNextSegmentIdentifier() {
         if (fSegmentIdentifier < 0) fSegmentIdentifier = 0;
         ++fSegmentIdentifier;
         if (fSegmentIdentifier > 1000000) fSegmentIdentifier = 1;
