@@ -74,7 +74,7 @@ void ERepSim::DetectorECal::Process(int entry, TG4Event* event) {
             tWidth = std::sqrt(tWidth);
         }
         else {
-            tWidth = 5.0*unit::ns;
+            tWidth = 2.0*unit::ns;
         }
 
         ERepSim::DigiHit cell1(cell_id1);
@@ -120,7 +120,7 @@ void ERepSim::DetectorECal::Process(int entry, TG4Event* event) {
             tWidth = std::sqrt(tWidth);
         }
         else {
-            tWidth = 5.0*unit::ns;
+            tWidth = 2.0*unit::ns;
         }
         ERepSim::DigiHit cell2(cell_id2);
         TVector3 pos2;
