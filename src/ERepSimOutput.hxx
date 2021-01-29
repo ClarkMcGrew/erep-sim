@@ -25,20 +25,37 @@ private:
 public:
     static Output& Get(void);
 
+    // The current trajectory identifier offset.
+    int TrajectoryIdOffset;
+
+    // The output tree.
     TTree* DataTree;
+
+    // The run and event number for the current erep-sim event.
     int RunId;
     int EventId;
+
+    // The channel identifier for the sensor.  This is chosen for each type of
+    // sensor in the detector.  The sensor are constructed in the response
+    // classes for each detector.
     std::vector<int> HitSensorId;
+
+    // The global position and time of the hit.
     std::vector<float> HitX;
     std::vector<float> HitY;
     std::vector<float> HitZ;
     std::vector<float> HitTime;
+
+    // The time resolution of the hit.
     std::vector<float> HitTimeWidth;
+
+    // The recorded charge.
     std::vector<float> HitCharge;
+
+    // The first and last indices of a hit segment that contributed to the
+    // hit.  These are indices in the Segment<blah> vectors.
     std::vector<int> HitSegmentBegin;
     std::vector<int> HitSegmentEnd;
-    std::vector<int> HitContribBegin;
-    std::vector<int> HitContribEnd;
 
     // The identifier of the hit segment.  This is also the index of the hit
     // segment in the edep-sim TG4HitSegment in the TG4HitSegmentContainer.
@@ -58,17 +75,6 @@ public:
     std::vector<float> SegmentY2;
     std::vector<float> SegmentZ2;
     std::vector<float> SegmentT;
-
-    // The trajectory id for this contributor
-    std::vector<int> ContribIds;
-
-    // A convenient vector of the PDG values.  The value is duplicated from
-    // TrajectoryPDG
-    std::vector<int> ContribPDG;
-
-    // A convenient vector of momenta.. The value is equal to the magnitude of
-    // the TrajectoryP[xyze] vectors.
-    std::vector<float> ContribMomentum;
 
     // The identifier for the trajectory from geant.  The value should be
     // equal to the index.
@@ -94,10 +100,17 @@ public:
     std::map<std::string,std::string> PropertyString;
 
     void CreateTrees();
-    void Reset(const TG4Event* event=NULL);
+    void Reset(int runId = -1, int eventId = -1);
+    void Update(TG4Event* event=NULL);
     void Fill();
     void Write();
 
 };
 
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

@@ -1,5 +1,7 @@
 #include "ERepSimOutput.hxx"
 
+#include <iostream>
+
 ERepSim::Output* ERepSim::Output::ThisOutput = NULL;
 
 ERepSim::Output& ERepSim::Output::Get(void) {
@@ -30,12 +32,9 @@ void ERepSim::Output::CreateTrees() {
     DataTree->Branch("HitCharge",&HitCharge);
     DataTree->Branch("HitSegmentBegin",&HitSegmentBegin);
     DataTree->Branch("HitSegmentEnd",&HitSegmentEnd);
-    DataTree->Branch("HitContribBegin",&HitContribBegin);
-    DataTree->Branch("HitContribEnd",&HitContribEnd);
 
     DataTree->Branch("SegmentIds",&SegmentIds);
     DataTree->Branch("SegmentTrackId",&SegmentTrackId);
-    DataTree->Branch("SegmentPDG",&SegmentPDG);
     DataTree->Branch("SegmentEnergy",&SegmentEnergy);
     DataTree->Branch("SegmentX1",&SegmentX1);
     DataTree->Branch("SegmentY1",&SegmentY1);
@@ -44,10 +43,6 @@ void ERepSim::Output::CreateTrees() {
     DataTree->Branch("SegmentY2",&SegmentY2);
     DataTree->Branch("SegmentZ2",&SegmentZ2);
     DataTree->Branch("SegmentT",&SegmentT);
-
-    DataTree->Branch("ContribIds",&ContribIds);
-    DataTree->Branch("ContribPDG",&ContribPDG);
-    DataTree->Branch("ContribMomentum",&ContribMomentum);
 
     DataTree->Branch("TrajectoryId",&TrajectoryId);
     DataTree->Branch("TrajectoryParent",&TrajectoryParent);
@@ -63,9 +58,11 @@ void ERepSim::Output::CreateTrees() {
 
 }
 
-void ERepSim::Output::Reset(const TG4Event *event) {
-    RunId = -1;
-    EventId = -1;
+void ERepSim::Output::Reset(int runId, int eventId) {
+    RunId = runId;
+    EventId = eventId;
+    TrajectoryIdOffset = 0;
+
     HitSensorId.clear();
     HitX.clear();
     HitY.clear();
@@ -75,8 +72,6 @@ void ERepSim::Output::Reset(const TG4Event *event) {
     HitCharge.clear();
     HitSegmentBegin.clear();
     HitSegmentEnd.clear();
-    HitContribBegin.clear();
-    HitContribEnd.clear();
 
     SegmentIds.clear();
     SegmentTrackId.clear();
@@ -90,10 +85,6 @@ void ERepSim::Output::Reset(const TG4Event *event) {
     SegmentZ2.clear();
     SegmentT.clear();
 
-    ContribIds.clear();
-    ContribPDG.clear();
-    ContribMomentum.clear();
-
     TrajectoryId.clear();
     TrajectoryParent.clear();
     TrajectoryPDG.clear();
@@ -105,15 +96,25 @@ void ERepSim::Output::Reset(const TG4Event *event) {
     TrajectoryPy.clear();
     TrajectoryPz.clear();
     TrajectoryPe.clear();
+}
 
+void ERepSim::Output::Update(TG4Event* event) {
     if (!event) return;
 
-    RunId = event->RunId;
-    EventId = event->EventId;
+    TrajectoryIdOffset = TrajectoryId.size();
+    std::cout << "ERepSim::Output::Update: Trajectory offset is "
+              << TrajectoryIdOffset
+              << std::endl;
 
-    for (auto traj : event->Trajectories) {
-        TrajectoryId.push_back(traj.GetTrackId());
-        TrajectoryParent.push_back(traj.GetParentId());
+    for (TG4Trajectory traj : event->Trajectories) {
+        int trackId = traj.GetTrackId();
+        if (trackId >= 0) trackId += TrajectoryIdOffset;
+        TrajectoryId.push_back(trackId);
+
+        int parentId = traj.GetParentId();
+        if (parentId >= 0) parentId += TrajectoryIdOffset;
+        TrajectoryParent.push_back(parentId);
+
         TrajectoryPDG.push_back(traj.GetPDGCode());
 
         TrajectoryX.push_back(traj.Points.front().GetPosition().X());
@@ -126,6 +127,7 @@ void ERepSim::Output::Reset(const TG4Event *event) {
         TrajectoryPz.push_back(traj.GetInitialMomentum().Z());
         TrajectoryPe.push_back(traj.GetInitialMomentum().E());
     }
+
 }
 
 void ERepSim::Output::Fill() {
@@ -137,3 +139,9 @@ void ERepSim::Output::Write() {
     PropertyTree->Fill();
     PropertyTree->Write();
 }
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:
