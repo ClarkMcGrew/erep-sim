@@ -20,7 +20,8 @@ public:
 
     virtual void Initialize();
 
-    virtual void Process(const TG4HitSegmentContainer& segments);
+    virtual void Process(const TG4Event* event,
+                         const TG4HitSegmentContainer& segments);
 
     virtual void Reset();
 
@@ -29,38 +30,35 @@ private:
     bool RecurseGeometry();
 
     //Iterates over segment
-    void AddTrack(int segId, const TG4HitSegment& seg);
-
-    //Computes the steps of size fStepSize between two points
-    std::vector<std::pair<TLorentzVector, double>> ComputeSteps(
-        TLorentzVector& startPoint, TLorentzVector& stopPoint);
+    void AddTrack(const TG4Event* event, const TG4HitSegment& seg, int segId);
 
     //Generates a certain amount of electrons at a given position of a segment
-    void GenerateElectrons(int segId,
-                           const TG4HitSegment& seg,
+    void GenerateElectrons(const TG4Event* event, const TG4HitSegment& seg, int segId,
                            TLorentzVector generationPoint, double segLength);
 
     //Drifts the electrons towards anode (MM)
-    void DriftElectrons(int segId, const TG4HitSegment& seg,
+    void DriftElectrons(const TG4Event* event, const TG4HitSegment& seg, int segId,
                         int sensId, double nbElectrons,
                         TLorentzVector generationPoint);
 
     //Computes the MM amplification
-    void MMAmplification(int segId, const TG4HitSegment& seg,
+    void MMAmplification(const TG4Event* event,
+                         const TG4HitSegment& seg, int segId,
                          int sensId, double nbElectrons,
                          double avg_t, double sigma_t,
                          TLorentzVector generationPoint);
 
     //Applies charge spreading due to resistive pads
-    void SpreadCharge(int segId, const TG4HitSegment& seg,
-                    int sensId, double nbElectrons,
-                    double avg_t, double sigma_t,
-                    TLorentzVector generationPoint);
+    void SpreadCharge(const TG4Event* event, const TG4HitSegment& seg, int segId,
+                      int sensId, double nbElectrons,
+                      double avg_t, double sigma_t,
+                      TLorentzVector generationPoint);
+
     //Adding a hit in a given pad
-    void AddHit(int segId, const TG4HitSegment& seg,
-            int sensId, double nbElectrons,
-            double avg_t, double sigma_t,
-            TLorentzVector generationPoint);
+    void AddHit(const TG4Event* event, const TG4HitSegment& seg, int segId,
+                int sensId, double nbElectrons,
+                double avg_t, double sigma_t,
+                TLorentzVector generationPoint);
 
     /// Turn a plane, pad_y and pad_z indexes into a sensor id (or a cube id).
     int GetSensorId(int plane, int pad_y, int pad_z);
@@ -72,7 +70,6 @@ private:
 
     //Returns longitudinal spread time in ns
     double GetSigmaDriftTime(double dist);
-
 
     //Returns longitudinal spread in mm
     double GetLongitudinalSpread(double dist);

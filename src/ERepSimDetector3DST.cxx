@@ -71,13 +71,21 @@ void ERepSim::Detector3DST::Reset() {
     fDAQ->Reset();
 }
 
-void ERepSim::Detector3DST::Process(int entry, TG4Event* event) {
-    fCurrentEvent = event;
-    TG4HitSegmentDetectors& segments = event->SegmentDetectors;
-    std::cout << "Detector3DST::Process " << segments["volCube"].size()
+void ERepSim::Detector3DST::Accumulate(int entry, const TG4Event* event) {
+    const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
+    TG4HitSegmentDetectors::const_iterator detector = segments.find("volCube");
+    if (detector == segments.end()) return;
+    std::cout << "Detector3DST::Accumulate " << detector->second.size()
               << " segments"
               << std::endl;
-    fResponse->Process(segments["volCube"]);
+    fResponse->Process(event,detector->second);
+    std::cout << "Detector3DST::Accumulate "
+              << std::endl;
+}
+
+void ERepSim::Detector3DST::Process(int entry) {
+    std::cout << "Detector3DST::Process "
+              << std::endl;
     if (fResponse->GetCarriers()) {
         fSensor->Process(*(fResponse->GetCarriers()));
     }

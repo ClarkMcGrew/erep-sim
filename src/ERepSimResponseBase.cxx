@@ -7,6 +7,11 @@ ERepSim::ResponseBase::~ResponseBase() { }
 
 int ERepSim::ResponseBase::fSegmentIdentifier = 0;
 
+void ERepSim::ResponseBase::Reset() {
+    if (fCarriers) fCarriers->clear();
+    fCarriers.reset(new ERepSim::Carrier::Map);
+}
+
 int ERepSim::ResponseBase::CountCarriers() const {
     int counter = 0;
     for (ERepSim::Carrier::Map::iterator c = fCarriers->begin();

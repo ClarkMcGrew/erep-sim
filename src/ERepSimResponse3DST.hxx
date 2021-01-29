@@ -15,7 +15,8 @@ public:
 
     virtual void Initialize();
 
-    virtual void Process(const TG4HitSegmentContainer& segments);
+    virtual void Process(const TG4Event* event,
+                         const TG4HitSegmentContainer& segments);
 
     virtual void Reset();
 
@@ -25,21 +26,25 @@ private:
 
     /// Add the energy deposition that occured at a particular average point.
     /// This deals with the crosstalk.
-    void AddDeposit(int segId, const TG4HitSegment* seg,
+    void AddDeposit(const TG4Event* event,
+                    const TG4HitSegment* seg, int segId,
                     TLorentzVector pos, double deposit);
 
     /// Add the energy dposition that occurred to a cube.  This adds it to the
     /// particular cube, and doesn't do cross talk (used by AddDeposition)
-    void AddCubeDeposit(int segId, const TG4HitSegment* seg,
+    void AddCubeDeposit(const TG4Event* event,
+                        const TG4HitSegment* seg, int segId,
                         TLorentzVector cube, double deposit);
 
     /// Add the energy deposition that occurred to a fiber.
-    void AddFiberDeposit(int sensId, int segId, const TG4HitSegment* seg,
+    void AddFiberDeposit(const TG4Event* event,
+                         const TG4HitSegment* seg, int sensId, int segId,
                          TLorentzVector fiber, TLorentzVector cube,
                          double fiberLength, double deposit);
 
     /// Add a photons to one fiber.
-    void AddFiberPhotons(int sensId, int segId, const TG4HitSegment* seg,
+    void AddFiberPhotons(const TG4Event* event,
+                         const TG4HitSegment* seg, int sensId, int segId,
                          TLorentzVector fiber, TLorentzVector cube,
                          int photons);
 
@@ -105,3 +110,9 @@ private:
 };
 
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

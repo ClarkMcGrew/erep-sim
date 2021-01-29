@@ -84,13 +84,22 @@ void ERepSim::DetectorTPC::Reset() {
     fDAQ->Reset();
 }
 
-void ERepSim::DetectorTPC::Process(int entry, TG4Event* event) {
-    fCurrentEvent = event;
-    TG4HitSegmentDetectors& segments = event->SegmentDetectors;
-    std::cout << "DetectorTPC::Process " << segments[fHitContainer].size()
+void ERepSim::DetectorTPC::Accumulate(int entry, const TG4Event* event) {
+    const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
+    TG4HitSegmentDetectors::const_iterator detector
+        = segments.find(fHitContainer);
+    if (detector == segments.end()) return;
+    std::cout << "DetectorTPC::Accumulate " << detector->second.size()
               << " segments"
               << std::endl;
-    fResponse->Process(segments[fHitContainer]);
+    fResponse->Process(event,detector->second);
+    std::cout << "DetectorTPC::Accumulate done"
+              << std::endl;
+}
+
+void ERepSim::DetectorTPC::Process(int entry) {
+    std::cout << "DetectorTPC::Process"
+              << std::endl;
     if (fResponse->GetCarriers()) {
         fSensor->Process(*(fResponse->GetCarriers()));
     }

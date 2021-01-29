@@ -98,3 +98,9 @@ private:
 };
 
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

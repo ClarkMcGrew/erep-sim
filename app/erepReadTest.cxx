@@ -95,15 +95,15 @@ int main(int argc, char **argv) {
                           << " " << (*ERepSim::Input::Get().SegmentT)[j]
                           << std::endl;
             }
-            for (int j = (*ERepSim::Input::Get().HitContribBegin)[i];
-                 j < (*ERepSim::Input::Get().HitContribEnd)[i];
-                 ++j) {
-                std::cout << "        C -> "
-                          << " " << (*ERepSim::Input::Get().ContribIds)[j]
-                          << " " << (*ERepSim::Input::Get().ContribPDG)[j]
-                          << " " << (*ERepSim::Input::Get().ContribMomentum)[j]
-                          << std::endl;
-            }
+            // for (int j = (*ERepSim::Input::Get().HitContribBegin)[i];
+            //      j < (*ERepSim::Input::Get().HitContribEnd)[i];
+            //      ++j) {
+            //     std::cout << "        C -> "
+            //               << " " << (*ERepSim::Input::Get().ContribIds)[j]
+            //               << " " << (*ERepSim::Input::Get().ContribPDG)[j]
+            //               << " " << (*ERepSim::Input::Get().ContribMomentum)[j]
+            //               << std::endl;
+            // }
         }
     }
 

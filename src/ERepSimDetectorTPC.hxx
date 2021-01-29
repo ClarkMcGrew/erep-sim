@@ -21,7 +21,9 @@ public:
 
     virtual void Initialize();
 
-    virtual void Process(int entry, TG4Event* event);
+    virtual void Accumulate(int entry, const TG4Event* event);
+
+    virtual void Process(int entry);
 
     virtual void Reset();
 
