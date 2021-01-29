@@ -130,8 +130,10 @@ void ERepSim::Response3DST::Reset() {
     ERepSim::ResponseBase::Reset();
 }
 
-void ERepSim::Response3DST::Process(const TG4HitSegmentContainer& segments) {
+void ERepSim::Response3DST::Process(const TG4Event* event,
+                                    const TG4HitSegmentContainer& segments) {
     std::cout << "Response3DST::Process " << segments.size() << " segments"
+              << " with " << CountCarriers() << " existing carriers"
               << std::endl;
     TLorentzVector avg;
     for (std::size_t i = 0; i < segments.size(); ++i) {
@@ -140,13 +142,14 @@ void ERepSim::Response3DST::Process(const TG4HitSegmentContainer& segments) {
         avg = 0.5*segment.GetStart() + 0.5*segment.GetStop();
         double deposit = segment.GetSecondaryDeposit();
         if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
-        AddDeposit(segId, &segment, avg, deposit);
+        AddDeposit(event, &segment, segId, avg, deposit);
     }
     std::cout << "Response3DST::Process " << CountCarriers()
               << " carriers generated" << std::endl;
 }
 
-void ERepSim::Response3DST::AddDeposit(int segId, const TG4HitSegment* seg,
+void ERepSim::Response3DST::AddDeposit(const TG4Event* event,
+                                       const TG4HitSegment* seg, int segId,
                                        TLorentzVector pos,
                                        double deposit) {
     // Find the position of the cube
@@ -157,25 +160,27 @@ void ERepSim::Response3DST::AddDeposit(int segId, const TG4HitSegment* seg,
     TLorentzVector cube(master[0],master[1],master[2],pos.T());
 
     double localDeposit = 1.0 - 2.0*fXLeakage - 2.0*fYLeakage - 2.0*fZLeakage;
-    AddCubeDeposit(segId,seg,cube,localDeposit*deposit);
+    AddCubeDeposit(event,seg,segId,cube,localDeposit*deposit);
 
     TLorentzVector neighbor = cube + TLorentzVector(fXPitch,0,0,0);
-    AddCubeDeposit(segId,seg,neighbor,fXLeakage*deposit);
+    AddCubeDeposit(event,seg,segId,neighbor,fXLeakage*deposit);
     neighbor = cube - TLorentzVector(fXPitch,0,0,0);
-    AddCubeDeposit(segId,seg,neighbor,fXLeakage*deposit);
+    AddCubeDeposit(event,seg,segId,neighbor,fXLeakage*deposit);
 
     neighbor = cube + TLorentzVector(0,fYPitch,0,0);
-    AddCubeDeposit(segId,seg,neighbor,fYLeakage*deposit);
+    AddCubeDeposit(event,seg,segId,neighbor,fYLeakage*deposit);
     neighbor = cube - TLorentzVector(0,fYPitch,0,0);
-    AddCubeDeposit(segId,seg,neighbor,fYLeakage*deposit);
+    AddCubeDeposit(event,seg,segId,neighbor,fYLeakage*deposit);
 
     neighbor = cube + TLorentzVector(0,0,0,fZPitch);
-    AddCubeDeposit(segId,seg,neighbor,fZLeakage*deposit);
+    AddCubeDeposit(event,seg,segId,neighbor,fZLeakage*deposit);
     neighbor = cube - TLorentzVector(0,0,0,fZPitch);
-    AddCubeDeposit(segId,seg,neighbor,fZLeakage*deposit);
+    AddCubeDeposit(event,seg,segId,neighbor,fZLeakage*deposit);
 }
 
-void ERepSim::Response3DST::AddCubeDeposit(int segId, const TG4HitSegment* seg,
+void ERepSim::Response3DST::AddCubeDeposit(const TG4Event* event,
+                                           const TG4HitSegment* seg,
+                                           int segId,
                                            TLorentzVector cube,
                                            double deposit) {
     int c = GetCube(cube);
@@ -194,7 +199,7 @@ void ERepSim::Response3DST::AddCubeDeposit(int segId, const TG4HitSegment* seg,
     fiberX.SetT(fiberX.T() + dX/fLightVelocity);
     int sensX = GetSensorId(-1,b,p);
     double lenX = fCubeMax-fCubeMin + sensorDist + mirrorDist;
-    AddFiberDeposit(sensX, segId,seg, fiberX, cube, lenX, deposit);
+    AddFiberDeposit(event, seg, sensX, segId, fiberX, cube, lenX, deposit);
 
     /// Handle the XZ fiber
     TLorentzVector fiberY(cube);
@@ -203,7 +208,7 @@ void ERepSim::Response3DST::AddCubeDeposit(int segId, const TG4HitSegment* seg,
     fiberY.SetT(fiberY.T() + dY/fLightVelocity);
     int sensY = GetSensorId(c,-1,p);
     double lenY = fBarMax-fBarMin + sensorDist + mirrorDist;
-    AddFiberDeposit(sensY, segId,seg, fiberY, cube, lenY, deposit);
+    AddFiberDeposit(event, seg, sensY, segId, fiberY, cube, lenY, deposit);
 
     /// Handle the XY Fiber
     TLorentzVector fiberZ(cube);
@@ -212,11 +217,12 @@ void ERepSim::Response3DST::AddCubeDeposit(int segId, const TG4HitSegment* seg,
     fiberZ.SetT(fiberZ.T() + dZ/fLightVelocity);
     int sensZ = GetSensorId(c,b,-1);
     double lenZ = fPlaneMax-fPlaneMin + sensorDist + mirrorDist;
-    AddFiberDeposit(sensZ, segId,seg, fiberZ, cube, lenZ, deposit);
+    AddFiberDeposit(event, seg, sensZ, segId, fiberZ, cube, lenZ, deposit);
 }
 
-void ERepSim::Response3DST::AddFiberDeposit(int sensId, int segId,
+void ERepSim::Response3DST::AddFiberDeposit(const TG4Event* event,
                                             const TG4HitSegment* seg,
+                                            int sensId, int segId,
                                             TLorentzVector fiber,
                                             TLorentzVector cube,
                                             double fiberLength,
@@ -227,7 +233,7 @@ void ERepSim::Response3DST::AddFiberDeposit(int sensId, int segId,
     // Add half the photons going directly toward the sensor
     double expected = 0.5*generatedPhotons*survival;
     int photons = gRandom->Poisson(expected);
-    AddFiberPhotons(sensId,segId,seg,fiber,cube,photons);
+    AddFiberPhotons(event,seg,sensId,segId,fiber,cube,photons);
 
     // Add half the photons that started going toward the mirror.
     double reflectivity =
@@ -238,12 +244,13 @@ void ERepSim::Response3DST::AddFiberDeposit(int sensId, int segId,
     expected =  0.5*generatedPhotons*survival;
     photons = gRandom->Poisson(expected);
     fiber.SetT(fiber.T() + extraDist/fLightVelocity);
-    AddFiberPhotons(sensId,segId,seg,fiber,cube,photons);
+    AddFiberPhotons(event,seg,sensId,segId,fiber,cube,photons);
 
 }
 
-void ERepSim::Response3DST::AddFiberPhotons(int sensId, int segId,
+void ERepSim::Response3DST::AddFiberPhotons(const TG4Event* event,
                                             const TG4HitSegment* seg,
+                                            int sensId, int segId,
                                             TLorentzVector fiber,
                                             TLorentzVector cube,
                                             int photons) {
@@ -251,7 +258,7 @@ void ERepSim::Response3DST::AddFiberPhotons(int sensId, int segId,
     for (int i=0; i<photons; ++i) {
         double dT = GetDecayTime();
         std::shared_ptr<ERepSim::Carrier> carrier(
-            new ERepSim::Carrier(sensId,segId,seg));
+            new ERepSim::Carrier(event,seg,sensId,segId));
         carrier->SetInitialPosition(cube.X(),cube.Y(),cube.Z(),cube.T()+dT);
         carrier->SetFinalPosition(fiber.X(),fiber.Y(),fiber.Z(),fiber.T()+dT);
         carrier->SetCharge(1.0);

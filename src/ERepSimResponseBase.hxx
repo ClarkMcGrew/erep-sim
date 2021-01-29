@@ -23,15 +23,14 @@ public:
     virtual void Initialize() = 0;
 
     /// Process a list of segments.
-    virtual void Process(const TG4HitSegmentContainer& segments) = 0;
+    virtual void Process(const TG4Event* event,
+                         const TG4HitSegmentContainer& segments) = 0;
 
     /// Reset the simulation between events.  This will probably need to be
     /// overloaded by the derived classes, but the base class Reset should
     /// always be called (i.e. "ERepSim::ResponseBase::Reset()") by the
     /// derived class.
-    virtual void Reset() {
-        fCarriers.reset(new ERepSim::Carrier::Map);
-    }
+    virtual void Reset();
 
     std::shared_ptr<ERepSim::Carrier::Map> GetCarriers() const {
         return fCarriers;
