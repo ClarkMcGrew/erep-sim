@@ -28,30 +28,34 @@ public:
     /// processed.
     virtual void Initialize() = 0;
 
-    /// Process a list of segments.
-    virtual void Process(int entry, TG4Event* event) = 0;
+    /// Accumulate a list of segments.  This can be called multiple times per
+    /// ERepSim "event".
+    virtual void Accumulate(int entry, const TG4Event* event) = 0;
 
-    /// Reset the simulation between events.  This will probably need to be
-    /// overloaded by the derived classes, but the base class Reset should
-    /// always be called (i.e. "ERepSim::DetectorBase::Reset()") by the
+    /// Process all of the accumulated information and save the output.
+    virtual void Process(int entry) = 0;
+
+    /// Reset the simulation between erep-sim events.  This will probably need
+    /// to be overloaded by the derived classes, but the base class Reset
+    /// should always be called (i.e. "ERepSim::DetectorBase::Reset()") by the
     /// derived class.
     virtual void Reset();
 
     const std::string& GetModelName() const {return fModelName;}
-
-    /// Apply validation to internal tables.  This is for debugging only!
-    void Validate();
 
 protected:
 
     /// What to say.  It's the name of the response model.
     std::string fModelName;
 
-    /// A pointer to the current event.
-    TG4Event* fCurrentEvent;
-
     /// Pack the output!
     void PackDigiHit(const ERepSim::DigiHit& hit);
     void PackImpulses(const ERepSim::Impulse::Container& impulses);
 };
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

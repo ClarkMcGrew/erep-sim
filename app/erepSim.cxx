@@ -8,6 +8,7 @@
 
 #include <TFile.h>
 #include <TTree.h>
+#include <TChain.h>
 #include <TGeoManager.h>
 
 #include <iostream>
@@ -17,16 +18,32 @@
 #include <unistd.h>
 
 int main(int argc, char **argv) {
-    std::cout << "erepReadWriteTest: Hello World" << std::endl;
-    int maxEntries = 1E+8; // Maximum to process.
+    std::string outputName;
+    int maxEvents = 1E+8; // Maximum to process.
+    int combineEntries = 1; // Number of input entries per output event.
+    int runId = 0;
 
     while (true) {
-        int c = getopt(argc,argv,"n:");
+        int c = getopt(argc,argv,"c:n:o:r:");
         if (c<0) break;
         switch (c) {
+        case 'c': {
+            std::istringstream tmp(optarg);
+            tmp >> combineEntries;
+            break;
+        }
         case 'n': {
             std::istringstream tmp(optarg);
-            tmp >> maxEntries;
+            tmp >> maxEvents;
+            break;
+        }
+        case 'o': {
+            outputName = optarg;
+            break;
+        }
+        case 'r': {
+            std::istringstream tmp(optarg);
+            tmp >> runId;
             break;
         }
         default: {
@@ -39,33 +56,40 @@ int main(int argc, char **argv) {
         }
         }
     }
+    if (combineEntries < 1) combineEntries = 1;
 
     if (argc <= optind) {
         throw std::runtime_error("Missing input file");
     }
-    std::string inputName(argv[optind++]);
-    std::cout << "Input Name " << inputName << std::endl;
-
-    if (argc <= optind) {
-        throw std::runtime_error("Missing output file");
+    std::vector<std::string> inputNames;
+    while (optind < argc) {
+        inputNames.push_back(argv[optind++]);
+        std::cout << "Input Name " << inputNames.back() << std::endl;
     }
-    std::string outputName(argv[optind++]);
+
+
+    if (outputName.empty()) {
+        std::cout << "Set the output file name using the '-o' option"
+                  << std::endl;
+        throw std::runtime_error("Must have an output file");
+    }
     std::cout << "Output Name " << outputName << std::endl;
 
-    std::unique_ptr<TFile> inputFile(new TFile(inputName.c_str(),"old"));
-    if (!inputFile->IsOpen()) {
-        throw std::runtime_error("File not open");
-    }
-    std::cout << "Input File " << inputFile->GetName() << std::endl;
+    // Attach to the input tree.
+    std::unique_ptr<TFile> inputFile(
+        new TFile(inputNames.front().c_str(),"old"));
+    if (!inputFile->IsOpen()) throw std::runtime_error("Input file not open");
 
-    TTree* edepsimTree = dynamic_cast<TTree*>(inputFile->Get("EDepSimEvents"));
-    if (!edepsimTree) {
-        std::runtime_error("No EDepSimEvents tree");
+    /// Build the input chain.
+    std::unique_ptr<TChain> edepsimChain(new TChain("EDepSimEvents"));
+    for (std::size_t i = 0; i<inputNames.size(); ++i) {
+        std::cout << "Add EDepSim file " << inputNames[i] << std::endl;
+        edepsimChain->Add(inputNames[i].c_str());
     }
 
     static TG4Event* edepsimEvent = NULL;
-    edepsimTree->SetBranchAddress("Event",&edepsimEvent);
-    int totalEntries = edepsimTree->GetEntries();
+    edepsimChain->SetBranchAddress("Event",&edepsimEvent);
+    int totalEntries = edepsimChain->GetEntries();
 
     TGeoManager* geom
         = dynamic_cast<TGeoManager*>(inputFile->Get("EDepSimGeometry"));
@@ -74,24 +98,50 @@ int main(int argc, char **argv) {
     }
 
     // Check to see if the ECal tree in in the input file.
-    TTree* ecalDigitTree = dynamic_cast<TTree*>(inputFile->Get("tDigit"));
-    if (ecalDigitTree) {
+    TChain* ecalDigitChain = NULL;
+    try {
+        TTree* ecalDigitTree = dynamic_cast<TTree*>(inputFile->Get("tDigit"));
+        if (!ecalDigitTree) {
+            std::runtime_error("File does not have ECal hits");
+        }
+        /// Build the input chain.
+        ecalDigitChain = new TChain("tDigit");
+        for (std::size_t i = 0; i<inputNames.size(); ++i) {
+            std::cout << "Add ECal file " << inputNames[i] << std::endl;
+            ecalDigitChain->Add(inputNames[i].c_str());
+        }
         std::cout << "File has the ECal electronics simulation"
+                  << std::endl;
+    }
+    catch (...) {
+        std::cout << "File does not have the ECal electronics simulation"
                   << std::endl;
     }
 
     std::vector<std::shared_ptr<ERepSim::DetectorBase>> detectors;
 
-    if (ecalDigitTree) {
+#define PROCESS_ECAL
+#ifdef PROCESS_ECAL
+    if (ecalDigitChain) {
+        std::cout << "ERepSim:: Create ECal." << std::endl;
         detectors.push_back(
             std::shared_ptr<ERepSim::DetectorECal>(
-                new ERepSim::DetectorECal(ecalDigitTree)));
+                new ERepSim::DetectorECal(ecalDigitChain)));
     }
+    else {
+        std::cout << "ERepSim:: Invalid ECal digit chain." << std::endl;
+    }
+#endif
 
+#define PROCESS_3DST
+#ifdef PROCESS_3DST
     detectors.push_back(
         std::shared_ptr<ERepSim::Detector3DST>(
             new ERepSim::Detector3DST));
+#endif
 
+#define PROCESS_TPC
+#ifdef PROCESS_TPC
     detectors.push_back(
         std::shared_ptr<ERepSim::DetectorTPC>(
             new ERepSim::DetectorTPC("TPC",
@@ -110,33 +160,49 @@ int main(int argc, char **argv) {
                                      "voltpcBot",
                                      "volTpcBot_PV_0",
                                      ERepSim::Def::Detector::kBotTPC)));
+#endif
 
     std::unique_ptr<TFile> outputFile(new TFile(outputName.c_str(),"recreate"));
     ERepSim::Output::Get().CreateTrees();
 
-#define SAVE_GEOMETRY
-#ifdef SAVE_GEOMETRY
     // Save the geometry into the output file
     gGeoManager->Write();
-#endif
 
+    // Initialize all of the detectors.
     for (auto detector: detectors) {detector->Initialize();}
 
-    totalEntries = std::min(totalEntries,maxEntries);
-    for (int entry = 0; entry < totalEntries; ++entry) {
-        edepsimTree->GetEntry(entry);
-
+    // Build the output events.
+    int entry = 0;
+    for (int erepEvent = 0;
+         erepEvent < maxEvents && entry < totalEntries;
+         ++erepEvent) {
+        std::cout << "ERepSim::  Event " << erepEvent
+                  << " starting from entry " << entry
+                  << std::endl;
+        // Reset the detectors for the next event.
+        ERepSim::Output::Get().Reset(runId,erepEvent);
         for (auto detector: detectors) {detector->Reset();}
 
-        ERepSim::Output::Get().Reset(edepsimEvent);
-        std::cout << "Process event " << ERepSim::Output::Get().RunId
-                  << "/" << ERepSim::Output::Get().EventId<< std::endl;
-
-        for (auto detector: detectors) {
-            detector->Process(entry, edepsimEvent);
+        // Add input events to build the full ERepSim event.
+        for (int subEntry = 0; subEntry < combineEntries; ++subEntry) {
+            if (edepsimChain->GetEntry(entry++) < 1) {
+                std::cout << "Ran out of input events"
+                          << std::endl;
+                break;
+            }
+            std::cout << "ERepSim:: Handle input event "
+                      << edepsimEvent->RunId << "/" << edepsimEvent->EventId
+                      << std::endl;
+            ERepSim::Output::Get().Update(edepsimEvent);
+            for (auto detector: detectors) {
+                detector->Accumulate(entry, edepsimEvent);
+            }
         }
 
-        detectors.front()->Validate();
+        // Apply the sensors and DAQ
+        for (auto detector: detectors) {
+            detector->Process(erepEvent);
+        }
 
         ERepSim::Output::Get().Fill();
     }

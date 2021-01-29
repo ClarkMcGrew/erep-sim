@@ -1,10 +1,5 @@
 # Build all of the applications here.
 
-add_executable(erep-sim erepSim.cxx)
-target_link_libraries(erep-sim
-  LINK_PUBLIC erepsim EDepSim::edepsim_io)
-install(TARGETS erep-sim RUNTIME DESTINATION bin)
-
 # Add a program to test writing the objects.
 add_executable(erepReadWriteTest erepReadWriteTest.cxx)
 target_link_libraries(erepReadWriteTest
@@ -21,3 +16,10 @@ install(TARGETS erepReadTest RUNTIME DESTINATION bin)
 add_executable(erepExportTest erepExportTest.cxx)
 target_link_libraries(erepExportTest LINK_PUBLIC ${ROOT_LIBRARIES})
 install(TARGETS erepExportTest RUNTIME DESTINATION bin)
+
+# Add a program to test reading the objects without edepsim
+add_executable(erep-merge erepMerge.cxx)
+target_link_libraries(erep-merge
+  LINK_PUBLIC erepsim EDepSim::edepsim_io)
+install(TARGETS erep-merge RUNTIME DESTINATION bin)
+
