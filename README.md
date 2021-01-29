@@ -60,6 +60,15 @@ This is a work in progress:
     integration window, and a 0.5ns digitization time.  The threshold
     is at 1 pe.
 
+* The ECal detector response model
+
+  * Look for the output of sand-stt and use the hits, if they are available.
+
+  * The sand-stt implementation only works on single edep-sim events.
+    Since a full spill is too complex for a single event, that means
+    the deadtime model is not correct.  This is fixed when the events
+    are combined.
+  
 # Design
 
 The simulation is divided into three basic steps, and base classes are
