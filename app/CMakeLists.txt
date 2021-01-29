@@ -18,8 +18,8 @@ target_link_libraries(erepExportTest LINK_PUBLIC ${ROOT_LIBRARIES})
 install(TARGETS erepExportTest RUNTIME DESTINATION bin)
 
 # Add a program to test reading the objects without edepsim
-add_executable(erep-merge erepMerge.cxx)
-target_link_libraries(erep-merge
+add_executable(erep-sim erepSim.cxx)
+target_link_libraries(erep-sim
   LINK_PUBLIC erepsim EDepSim::edepsim_io)
-install(TARGETS erep-merge RUNTIME DESTINATION bin)
+install(TARGETS erep-sim RUNTIME DESTINATION bin)
 
