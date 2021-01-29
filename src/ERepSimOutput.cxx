@@ -35,6 +35,7 @@ void ERepSim::Output::CreateTrees() {
 
     DataTree->Branch("SegmentIds",&SegmentIds);
     DataTree->Branch("SegmentTrackId",&SegmentTrackId);
+    DataTree->Branch("SegmentPDG",&SegmentPDG);
     DataTree->Branch("SegmentEnergy",&SegmentEnergy);
     DataTree->Branch("SegmentX1",&SegmentX1);
     DataTree->Branch("SegmentY1",&SegmentY1);
