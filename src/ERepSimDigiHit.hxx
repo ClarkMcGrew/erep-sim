@@ -12,10 +12,10 @@ namespace ERepSim {
 // FADC.  For a simple digitizer, the vectors will have single entries.
 class ERepSim::DigiHit {
 public:
-    /// The container of impulses.
+    /// The container of DigiHit shared pointers.
     typedef std::vector<std::shared_ptr<ERepSim::DigiHit>> Container;
 
-    /// The type of a map from the sensor identifier to the impulses
+    /// The type of a map from the sensor identifier to the hits
     /// associated with that sensor.
     typedef std::map<int,ERepSim::DigiHit::Container> Map;
 
