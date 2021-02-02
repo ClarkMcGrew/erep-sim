@@ -21,27 +21,39 @@
 
 /// The command is:
 ///
-/// erep-merge -o output.root -n <count> -M <file>:<mean> -N <file>:<number>
+/// erep-sim -o output.root -n <count> -M <file>:<mean> -N <file>:<number>
 void usage() {
-    std::cout << "usage: erep-merge -o output.root [options] [input.root]"
+    std::cout << "Usage: erep-sim -o output.root [options] [input.root]"
               << std::endl;
     std::cout << std::endl;
     std::cout << "   -o [output-file]   Set the output file" << std::endl;
     std::cout << "   -r [run-number]    Set the run number" << std::endl;
     std::cout << "   -n [event-count]   Events to generate" << std::endl;
-    std::cout << "   -M [file]:{s}[mean]{:volume} Draw 'mean' events from file."
+    std::cout << "   -M [file]:{s}[mean]{,skip}{:volume}" << std::endl;
+    std::cout << "          Draw a 'mean' number of events from the file."
               << std::endl;
-    std::cout << "                      If prefixed with 's', use sequentially."
+    std::cout << "          If prefixed with 's', the use events sequentially,"
               << std::endl;
-    std::cout << "                      Optionally exclude volume (a regexp)."
+    std::cout << "          otherwise events are drawn randomly.  If drawn"
               << std::endl;
-    std::cout << "   -N [file]:[number]{:volume} Draw 'number' events from file"
+    std::cout << "          sequentially, the number of interactions to skip"
               << std::endl;
-    std::cout << "                      Optionally exclude volume (a regexp)."
+    std::cout << "          can be set.  Optionally, a regexp for volumes to"
+              << std::endl;
+    std::cout << "          be excluded can be set."
+              << std::endl;
+    std::cout << "   -N [file]:[number]{,skip}{:volume}" << std::endl;
+    std::cout << "          Draw a fixed number of interactions from the file."
+              << std::endl;
+    std::cout << "          The number of interactions to skip can be set."
+              << std::endl;
+    std::cout << "          Optionally, a regexp for volumes to be excluded"
+              << std::endl;
+    std::cout << "          can be set."
               << std::endl;
     std::cout << std::endl;
-    std::cout << "  If a separate input file is provided, it is equivalent to"
-              << "  adding '-N input.root:1'."
+    std::cout << "  Providing a separate input file is equivalent to"
+              << "  '-N input.root:1'."
               << std::endl;
 }
 
@@ -192,11 +204,7 @@ int main(int argc, char **argv) {
             break;
         }
         default: {
-            std::cout << "Usage: " << std::endl;
-            std::cout << "   "
-                      << "-n <number>  : Process no more than"
-                      << " <number> events."
-                      << std::endl;
+            usage();
             exit(1);
         }
         }
