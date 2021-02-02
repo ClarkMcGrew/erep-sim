@@ -146,6 +146,7 @@ int main(int argc, char **argv) {
             std::string file(optarg);
             std::string count(file.substr(file.find(':')+1));
             file = file.substr(0,file.find(':'));
+            et.fileName = file;
             et.sequential = false; // set the default.
             if (count[0] == 'r' || count[0] == 'R') {
                 et.sequential = false;
@@ -155,16 +156,31 @@ int main(int argc, char **argv) {
                 et.sequential = true;
                 count = count.substr(1);
             }
-            std::istringstream tmp(count);
-            et.fileName = file;
-            double eCount = 1.0;
-            tmp >> eCount;
-            et.eventCount = eCount; // positive says random (this is the mean).
+            {
+                // positive says random (this is the mean).
+                std::istringstream tmp(count);
+                double eCount = 1.0;
+                tmp >> eCount;
+                et.eventCount = eCount;
+            }
+            et.treeEntry = 0;
+            {
+                std::size_t skipIndex = count.find(',');
+                if (skipIndex != std::string::npos) {
+                    count = count.substr(skipIndex+1);
+                    std::istringstream tmp(count);
+                    int sCount = 0;
+                    tmp >> sCount;
+                    et.treeEntry = sCount;
+                }
+            }
             // Check if there is an excluded volume expression
             et.excludeVolume = "";
-            std::size_t exc = count.find(':');
-            if (exc != std::string::npos) {
-                et.excludeVolume = count.substr(exc+1);
+            {
+                std::size_t exclusionIndex = count.find(':');
+                if (exclusionIndex != std::string::npos) {
+                    et.excludeVolume = count.substr(exclusionIndex+1);
+                }
             }
             inputFiles.push_back(et);
             break;
@@ -175,17 +191,37 @@ int main(int argc, char **argv) {
             break;
         }
         case 'N': {
+            EventTree et;
             std::string file(optarg);
             std::string count(file.substr(file.find(':')+1));
             file = file.substr(0,file.find(':'));
-            std::istringstream tmp(count);
-            EventTree et;
             et.fileName = file;
-            et.excludeVolume = "";
-            int eCount = 1;
-            tmp >> eCount;
-            et.eventCount = -eCount; // negative says fixed (this is the value).
             et.sequential = true;
+            {
+                std::istringstream tmp(count);
+                // Negative says fixed (this is the value).
+                int eCount = 1;
+                tmp >> eCount;
+                et.eventCount = -eCount;
+            }
+            et.treeEntry = 0;
+            {
+                std::size_t skipIndex = count.find(',');
+                if (skipIndex != std::string::npos) {
+                    count = count.substr(skipIndex+1);
+                    std::istringstream tmp(count);
+                    int sCount = 0;
+                    tmp >> sCount;
+                    et.treeEntry = sCount;
+                }
+            }
+            et.excludeVolume = "";
+            {
+                std::size_t exclusionIndex = count.find(':');
+                if (exclusionIndex != std::string::npos) {
+                    et.excludeVolume = count.substr(exclusionIndex+1);
+                }
+            }
             inputFiles.push_back(et);
             break;
         }
@@ -246,20 +282,21 @@ int main(int argc, char **argv) {
         std::cout << "Input Name: " << et.fileName << std::endl;
         std::cout << "    -- ";
         if (et.eventCount < 0) {
-            std::cout << " Count: " << -et.eventCount;
+            std::cout << " Count: " << -et.eventCount << " interactions";
         }
         else {
-            std::cout << " Mean: " << et.eventCount;
+            std::cout << " Mean: " << et.eventCount << " interactions";
         }
         if (et.sequential) {
-            std::cout << " sequential entry order";
+            std::cout << " sequential from entry "
+                      << et.treeEntry;
         }
         else {
             std::cout << " randomized entry order";
         }
         std::cout << std::endl;
         et.firstEntry = totalEntries;
-        et.treeEntry = et.firstEntry;
+        et.treeEntry = et.firstEntry + et.treeEntry;
         edepsimChain->Add(et.fileName.c_str());
         totalEntries = edepsimChain->GetEntries();
         et.lastEntry = totalEntries;
@@ -275,13 +312,13 @@ int main(int argc, char **argv) {
             }
         }
         if (!et.excludeVolume.empty()) {
-            std::cout << "Excluding volumes: " << et.excludeVolume;
+            std::cout << "excluding volume: " << et.excludeVolume;
         }
         std::cout << std::endl;
     }
 
     static TG4Event* edepsimEvent = NULL;
-    edepsimChain->SetBranchAddress("Event",&edepsimEvent);
+    edepsimChain->SetBranchAddress("Event", &edepsimEvent);
 
     if (ecalKludgeChain) {
         std::cout << "ERepSim:: Create ECal." << std::endl;
