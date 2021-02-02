@@ -132,9 +132,11 @@ void ERepSim::Response3DST::Reset() {
 
 void ERepSim::Response3DST::Process(const TG4Event* event,
                                     const TG4HitSegmentContainer& segments) {
+#ifdef LOUD_AND_PROUD
     std::cout << "Response3DST::Process " << segments.size() << " segments"
               << " with " << CountCarriers() << " existing carriers"
               << std::endl;
+#endif
     TLorentzVector avg;
     for (std::size_t i = 0; i < segments.size(); ++i) {
         const TG4HitSegment& segment = segments[i];
@@ -144,8 +146,10 @@ void ERepSim::Response3DST::Process(const TG4Event* event,
         if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
         AddDeposit(event, &segment, segId, avg, deposit);
     }
+#ifdef LOUD_AND_PROUD
     std::cout << "Response3DST::Process " << CountCarriers()
               << " carriers generated" << std::endl;
+#endif
 }
 
 void ERepSim::Response3DST::AddDeposit(const TG4Event* event,

@@ -28,7 +28,9 @@ void ERepSim::DetectorECal::Initialize() {
 }
 
 void ERepSim::DetectorECal::Reset() {
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Reset" << std::endl;
+#endif
     DetectorBase::Reset();
     fHits.clear();
 }
@@ -43,10 +45,11 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     fDigitTree->GetEntry(entry);
 
     int generatedHits = 0;
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Accumulate " << fCells->size()
               << " cells"
               << std::endl;
-
+#endif
     for (std::vector<cell>::iterator c = fCells->begin();
          c != fCells->end(); ++c) {
         if (c->mod > 29) continue;
@@ -164,9 +167,11 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     TG4HitSegmentDetectors::const_iterator detector = segments.find("EMCalSci");
     if (detector != segments.end()) {
         const TG4HitSegmentContainer&  g4Hits = detector->second;
+#ifdef LOUD_AND_PROUD
         std::cout << "ERepSim::DetectorECal: Pack "
                   << g4Hits.size() << " segments"
                   << std::endl;
+#endif
         for (TG4HitSegmentContainer::const_iterator s = g4Hits.begin();
              s != g4Hits.end(); ++s) {
             TLorentzVector sPos;
@@ -200,8 +205,10 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
         }
     }
 
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Accumulate " << generatedHits
               << " hits generated" << std::endl;
+#endif
 }
 
 namespace {
@@ -214,8 +221,10 @@ namespace {
 }
 
 void ERepSim::DetectorECal::Process(int entry) {
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Process " << fHits.size()
               << std::endl;
+#endif
     int generatedHits = 0;
     for (ERepSim::DigiHit::Map::iterator c = fHits.begin();
          c != fHits.end(); ++c) {

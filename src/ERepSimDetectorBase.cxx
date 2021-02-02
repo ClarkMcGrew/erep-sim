@@ -16,7 +16,7 @@ ERepSim::DetectorBase::DetectorBase(const char *modelname)
 ERepSim::DetectorBase::~DetectorBase() { }
 
 void ERepSim::DetectorBase::Reset() {
-    std::cout << "DetectorBase::Reset" << std::endl;
+    // std::cout << "DetectorBase::Reset" << std::endl;
 }
 
 void ERepSim::DetectorBase::PackDigiHit(const ERepSim::DigiHit& hit) {

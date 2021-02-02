@@ -64,7 +64,9 @@ void ERepSim::Detector3DST::Initialize() {
 }
 
 void ERepSim::Detector3DST::Reset() {
+#ifdef LOUD_AND_PROUD
     std::cout << "Detector3DST::Reset" << std::endl;
+#endif
     DetectorBase::Reset();
     fResponse->Reset();
     fSensor->Reset();
@@ -75,17 +77,23 @@ void ERepSim::Detector3DST::Accumulate(int entry, const TG4Event* event) {
     const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     TG4HitSegmentDetectors::const_iterator detector = segments.find("volCube");
     if (detector == segments.end()) return;
+#ifdef LOUD_AND_PROUD
     std::cout << "Detector3DST::Accumulate " << detector->second.size()
               << " segments"
               << std::endl;
+#endif
     fResponse->Process(event,detector->second);
+#ifdef LOUD_AND_PROUD
     std::cout << "Detector3DST::Accumulate "
               << std::endl;
+#endif
 }
 
 void ERepSim::Detector3DST::Process(int entry) {
+#ifdef LOUD_AND_PROUD
     std::cout << "Detector3DST::Process "
               << std::endl;
+#endif
     if (fResponse->GetCarriers()) {
         fSensor->Process(*(fResponse->GetCarriers()));
     }

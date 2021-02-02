@@ -103,9 +103,11 @@ void ERepSim::Output::Update(TG4Event* event) {
     if (!event) return;
 
     TrajectoryIdOffset = TrajectoryId.size();
+#ifdef LOUD_AND_PROUD
     std::cout << "ERepSim::Output::Update: Trajectory offset is "
               << TrajectoryIdOffset
               << std::endl;
+#endif
 
     for (TG4Trajectory traj : event->Trajectories) {
         int trackId = traj.GetTrackId();

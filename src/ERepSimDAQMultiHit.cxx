@@ -22,22 +22,28 @@ void ERepSim::DAQMultiHit::Reset() {
 }
 
 void ERepSim::DAQMultiHit::Process(const ERepSim::Impulse::Map& impulses) {
+#ifdef LOUD_AND_PROUD
     std::cout << "DAQMultiHit::Process " << impulses.size() << " sensors hit"
               << std::endl;
+#endif
     for (ERepSim::Impulse::Map::const_iterator imp = impulses.begin();
          imp != impulses.end(); ++imp) {
         DigitizeImpulses(imp->first, imp->second);
     }
+#ifdef LOUD_AND_PROUD
     std::cout << "DAQMultiHit::Process"
               << " " << GetDigiHits()->size()
               << " hits generated"
               << std::endl;
+#endif
 }
 
 void ERepSim::DAQMultiHit::DigitizeImpulses(
     int id, const ERepSim::Impulse::Container& impulses) {
     if (impulses.empty()) {
+#ifdef LOUD_AND_PROUD
         std::cout << "No impulses on sensor " << id << std::endl;
+#endif
         return;
     }
     // Set up the first (possibly only) hit

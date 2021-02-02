@@ -97,9 +97,11 @@ void ERepSim::ResponseTPC::Reset() {
 
 void ERepSim::ResponseTPC::Process(const TG4Event* event,
                                    const TG4HitSegmentContainer& segments) {
+#ifdef LOUD_AND_PROUD
     std::cout << "ResponseTPC::Process " << segments.size() << " segments"
               << " with " << CountCarriers() << " existing carriers"
               << std::endl;
+#endif
 
     for (std::size_t i = 0; i<segments.size(); ++i) {
         const TG4HitSegment& seg = segments[i];
@@ -107,8 +109,10 @@ void ERepSim::ResponseTPC::Process(const TG4Event* event,
         AddTrack(event,seg,segId);
     }
 
+#ifdef LOUD_AND_PROUD
     std::cout << "ResponseTPC::Process " << CountCarriers()
               << " carriers generated" << std::endl;
+#endif
 }
 
 void ERepSim::ResponseTPC::GenerateElectrons(

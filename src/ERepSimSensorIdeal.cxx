@@ -28,9 +28,11 @@ namespace {
 }
 
 void ERepSim::SensorIdeal::Process(const ERepSim::Carrier::Map& carriers) {
+#ifdef LOUD_AND_PROUD
     std::cout << "SensorIdeal::Process"
               << " " << carriers.size() << " sensors"
               << std::endl;
+#endif
     for (ERepSim::Carrier::Map::const_iterator car = carriers.begin();
          car != carriers.end(); ++car) {
         AddImpulses(car->first, car->second);
@@ -41,8 +43,10 @@ void ERepSim::SensorIdeal::Process(const ERepSim::Carrier::Map& carriers) {
         std::sort(imp->second.begin(), imp->second.end(), CompareImpulses());
     }
 
+#ifdef LOUD_AND_PROUD
     std::cout << "SensorIdeal::Process " << CountImpulses()
               << " impulses generated" << std::endl;
+#endif
 }
 
 void ERepSim::SensorIdeal::AddImpulses(

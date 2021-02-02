@@ -77,7 +77,9 @@ void ERepSim::DetectorTPC::Initialize() {
 }
 
 void ERepSim::DetectorTPC::Reset() {
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorTPC::Reset" << std::endl;
+#endif
     DetectorBase::Reset();
     fResponse->Reset();
     fSensor->Reset();
@@ -89,17 +91,23 @@ void ERepSim::DetectorTPC::Accumulate(int entry, const TG4Event* event) {
     TG4HitSegmentDetectors::const_iterator detector
         = segments.find(fHitContainer);
     if (detector == segments.end()) return;
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorTPC::Accumulate " << detector->second.size()
               << " segments"
               << std::endl;
+#endif
     fResponse->Process(event,detector->second);
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorTPC::Accumulate done"
               << std::endl;
+#endif
 }
 
 void ERepSim::DetectorTPC::Process(int entry) {
+#ifdef LOUD_AND_PROUD
     std::cout << "DetectorTPC::Process"
               << std::endl;
+#endif
     if (fResponse->GetCarriers()) {
         fSensor->Process(*(fResponse->GetCarriers()));
     }
@@ -119,7 +127,9 @@ void ERepSim::DetectorTPC::Process(int entry) {
             }
         }
     }
-    std::cout << "DetectorTPC::Process " << generatedHits
+    std::cout << "DetectorTPC::Process "
+              << fModelName
+              << " " << generatedHits
               << " hits generated" << std::endl;
 }
 
