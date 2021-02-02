@@ -11,6 +11,7 @@
 #include <TChain.h>
 #include <TGeoManager.h>
 #include <TRandom.h>
+#include <TPRegexp.h>
 
 #include <iostream>
 #include <sstream>
@@ -28,9 +29,15 @@ void usage() {
     std::cout << "   -o [output-file]   Set the output file" << std::endl;
     std::cout << "   -r [run-number]    Set the run number" << std::endl;
     std::cout << "   -n [event-count]   Events to generate" << std::endl;
-    std::cout << "   -M [file]:[mean]   Draw 'mean' events from file"
+    std::cout << "   -M [file]:{s}[mean]{:volume} Draw 'mean' events from file."
               << std::endl;
-    std::cout << "   -N [file]:[number] Draw exactly 'number' events from file"
+    std::cout << "                      If prefixed with 's', use sequentially."
+              << std::endl;
+    std::cout << "                      Optionally exclude volume (a regexp)."
+              << std::endl;
+    std::cout << "   -N [file]:[number]{:volume} Draw 'number' events from file"
+              << std::endl;
+    std::cout << "                      Optionally exclude volume (a regexp)."
               << std::endl;
     std::cout << std::endl;
     std::cout << "  If a separate input file is provided, it is equivalent to"
@@ -40,9 +47,12 @@ void usage() {
 
 // Which files to get edep-sim events frm.
 struct EventTree {
-    EventTree() : eventCount(0), firstEntry(0), lastEntry(0), treeEntry(0) {}
+    EventTree() : eventCount(0), sequential(true),
+                  firstEntry(0), lastEntry(0), treeEntry(0) {}
     std::string fileName;   // The file name.
+    std::string excludeVolume; // A regular expression for a volume to exclude
     double      eventCount; // Events to draw from the file
+    bool        sequential; // Use events sequentially
     int         firstEntry; // First entry in the chain.
     int         lastEntry;  // firstEntry + total entries in chain
     int         treeEntry;  // The last entry used.
@@ -120,15 +130,30 @@ int main(int argc, char **argv) {
         if (c<0) break;
         switch (c) {
         case 'M': {
+            EventTree et;
             std::string file(optarg);
             std::string count(file.substr(file.find(':')+1));
             file = file.substr(0,file.find(':'));
+            et.sequential = false; // set the default.
+            if (count[0] == 'r' || count[0] == 'R') {
+                et.sequential = false;
+                count = count.substr(1);
+            }
+            if (count[0] == 's' || count[0] == 'S') {
+                et.sequential = true;
+                count = count.substr(1);
+            }
             std::istringstream tmp(count);
-            EventTree et;
             et.fileName = file;
             double eCount = 1.0;
             tmp >> eCount;
             et.eventCount = eCount; // positive says random (this is the mean).
+            // Check if there is an excluded volume expression
+            et.excludeVolume = "";
+            std::size_t exc = count.find(':');
+            if (exc != std::string::npos) {
+                et.excludeVolume = count.substr(exc+1);
+            }
             inputFiles.push_back(et);
             break;
         }
@@ -144,9 +169,11 @@ int main(int argc, char **argv) {
             std::istringstream tmp(count);
             EventTree et;
             et.fileName = file;
+            et.excludeVolume = "";
             int eCount = 1;
             tmp >> eCount;
             et.eventCount = -eCount; // negative says fixed (this is the value).
+            et.sequential = true;
             inputFiles.push_back(et);
             break;
         }
@@ -216,11 +243,19 @@ int main(int argc, char **argv) {
         else {
             std::cout << " Mean: " << et.eventCount;
         }
+        if (et.sequential) {
+            std::cout << " sequential entry order";
+        }
+        else {
+            std::cout << " randomized entry order";
+        }
+        std::cout << std::endl;
         et.firstEntry = totalEntries;
         et.treeEntry = et.firstEntry;
         edepsimChain->Add(et.fileName.c_str());
         totalEntries = edepsimChain->GetEntries();
         et.lastEntry = totalEntries;
+        std::cout << "    -- ";
         std::cout << " Entries: [" << et.firstEntry
                   << " - " << et.lastEntry << ")";
         if (ecalKludgeChain) {
@@ -230,6 +265,9 @@ int main(int argc, char **argv) {
             if (ecalEntries != totalEntries) {
                 throw std::runtime_error("File doesn't support ecal kludge");
             }
+        }
+        if (!et.excludeVolume.empty()) {
+            std::cout << "Excluding volumes: " << et.excludeVolume;
         }
         std::cout << std::endl;
     }
@@ -290,66 +328,133 @@ int main(int argc, char **argv) {
         }
 
         // Select the entries to use from each input source.
-        selectedEntries.clear();
-        for (EventTree& et : inputFiles) {
-            // Check if we are using a fixed number of entries.
-            if (et.eventCount < 0) {
-                std::cout << "ERepSim:: file: " << et.fileName;
-                std::cout << std::endl;
-                std::cout << "     --" << " Use: " << -et.eventCount
-                          << " starting at " << et.treeEntry
-                          << std::endl;
-                for (int i = 0; i < -et.eventCount; ++i) {
-                    selectedEntries.push_back(et.treeEntry++);
-                }
-                continue;
-            }
-            int events = gRandom->Poisson(et.eventCount);
-            std::cout << "ERepSim:: file: " << et.fileName;
-            std::cout << std::endl;
-            std::cout << "     --" << " Mean: " << et.eventCount
-                      << " Generate: " << events
-                      << std::endl;
-            possibleEntries.clear();
-            randomEntryVector(possibleEntries,events,
-                              et.lastEntry-et.firstEntry);
-            for (int entry : possibleEntries) {
-                selectedEntries.push_back(entry+et.firstEntry);
-            }
-        }
-
-        // Apply a sanity check to see if the event should be generated.
         bool eventOK = true;
         for (EventTree& et : inputFiles) {
+            selectedEntries.clear();
+            possibleEntries.clear();
+            int events = -1;
+            // Check if we are using a fixed number of entries.
+            if (et.eventCount < 0) {
+                events = -et.eventCount;
+                std::cout << "ERepSim:: file: " << et.fileName;
+                std::cout << std::endl;
+                std::cout << "     --" << " Use: " << events;
+                if (et.sequential) {
+                    std::cout << " drawn sequentially starting at"
+                              << " entry " << et.treeEntry - et.firstEntry;
+                }
+                else {
+                    std::cout << " drawn randomly";
+                }
+                std::cout << std::endl;
+            }
+            else {
+                events = gRandom->Poisson(et.eventCount);
+                std::cout << "ERepSim:: file: " << et.fileName;
+                std::cout << std::endl;
+                std::cout << "     --" << " Mean: " << et.eventCount
+                          << " Generate: " << events;
+                if (et.sequential) {
+                    std::cout << " drawn sequentially starting at"
+                              << " entry " << et.treeEntry - et.firstEntry;
+                }
+                else {
+                    std::cout << " drawn randomly";
+                }
+                std::cout << std::endl;
+            }
+            if (!et.excludeVolume.empty()) {
+                std::cout << "     -- Excluding volume "
+                          << et.excludeVolume
+                          << std::endl;
+            }
+            if (et.sequential) {
+                for (int i = 0; i < events; ++i) {
+                    selectedEntries.push_back(et.treeEntry++);
+                }
+            }
+            else {
+                // Randomize the order
+                possibleEntries.clear();
+                randomEntryVector(possibleEntries,events,
+                                  et.lastEntry-et.firstEntry);
+                for (int entry : possibleEntries) {
+                    et.treeEntry = entry+et.firstEntry;
+                    selectedEntries.push_back(et.treeEntry);
+                }
+            }
+
+            // Apply a sanity check to see if the event should be generated.
             if (et.treeEntry > et.lastEntry) {
                 std::cout << "ERepSim:: Ran out of events in "
                           << et.fileName
                           << std::endl;
                 eventOK = false;
+                break;
             }
-        }
-        if (!eventOK) break;
 
-        // The selected entries should already be sorted, but check anyway.
-        std::sort(selectedEntries.begin(), selectedEntries.end());
+            // The selected entries should already be sorted, but check anyway.
+            std::sort(selectedEntries.begin(), selectedEntries.end());
 
-        // Accumulate the input events.
-        for (int entry : selectedEntries) {
-            if (edepsimChain->GetEntry(entry) < 1) {
-                std::cout << "Error getting entry " << entry
+            // Accumulate the input events for this file
+            int index = -1;
+            for (const int entry : selectedEntries) {
+                ++index;
+                ///////////////////////////////////////
+                // Get the next entry to be added to the event.
+                if (edepsimChain->GetEntry(entry) < 1) {
+                    std::cout << "Error getting entry " << entry
+                              << std::endl;
+                    throw std::runtime_error("Error getting an input event");
+                }
+#ifdef LOUD_AND_PROUD
+                std::cout << "ERepSim:: Generate Entry: " << entry
+                          << " " << index
+                          << " Input event: "
+                          << edepsimEvent->RunId << "/" << edepsimEvent->EventId
                           << std::endl;
-                throw std::runtime_error("Error getting an input event");
-            }
-            std::cout << "ERepSim:: Entry: " << entry
-                      << " Input event: "
-                      << edepsimEvent->RunId << "/" << edepsimEvent->EventId
-                      << std::endl;
-            ERepSim::Output::Get().Update(edepsimEvent);
-            for (std::shared_ptr<ERepSim::DetectorBase>& detector
-                     : gDetectors) {
-                detector->Accumulate(entry, edepsimEvent);
+#endif
+
+                ///////////////////////////////////////
+                // Check if the entry should be excluded.
+                bool excludeEntry = false;
+
+                // Find the volume containing the first primary particle.
+                if (!et.excludeVolume.empty()) {
+                    std::string volumeName;
+                    for (TG4Trajectory& traj : edepsimEvent->Trajectories) {
+                        if (traj.GetParentId() >= 0) continue;
+                        if (traj.Points.empty()) continue;
+                        TVector3 pnt = traj.Points.front().GetPosition().Vect();
+                        TGeoNode* node
+                            = gGeoManager->FindNode(pnt.X(),pnt.Y(),pnt.Z());
+                        if (!node) continue;
+                        volumeName = gGeoManager->GetPath();
+                        break;
+                    }
+                    // See if the volume should be excluded.
+                    std::unique_ptr<TPRegexp> exclusion(
+                        new TPRegexp(et.excludeVolume.c_str()));
+                    if (exclusion->Match(volumeName)>0) {
+                        std::cout << "EXCLUDING " << volumeName
+                                  << std::endl;
+                        excludeEntry = true;
+                    }
+                }
+
+                if (excludeEntry) continue;
+
+                ///////////////////////////////////////
+                // Add the entry to the erepSim event.
+                ERepSim::Output::Get().Update(edepsimEvent);
+                for (std::shared_ptr<ERepSim::DetectorBase>& detector
+                         : gDetectors) {
+                    detector->Accumulate(entry, edepsimEvent);
+                }
             }
         }
+
+        if (!eventOK) break;
 
         // Apply the sensors and DAQ
         for (std::shared_ptr<ERepSim::DetectorBase>& detector
