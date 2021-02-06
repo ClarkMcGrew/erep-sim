@@ -44,6 +44,8 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     fDigitTree->SetBranchAddress("cell",&fCells);
     fDigitTree->GetEntry(entry);
 
+    double minTime = 1E+20;
+    double maxTime = -1E+20;
     int generatedHits = 0;
 #ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Accumulate " << fCells->size()
@@ -85,26 +87,32 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
         tWidth = std::max(1*unit::ns, tWidth);
         tWidth = std::min(10*unit::ns, tWidth);
 
-        ERepSim::DigiHit cell1(cell_id1);
-        TVector3 pos1;
-        if (c->mod < 30) {
-            pos1.SetX(c->x - c->l/2.0);
-            pos1.SetY(c->y);
-            pos1.SetZ(c->z);
-        }
-        else {
-            pos1.SetX(c->x);
-            pos1.SetY(c->y - c->l/2.0);
-            pos1.SetZ(c->z);
-        }
-        cell1.SetPosition(pos1.X(),pos1.Y(),pos1.Z());
         double q1 = c->adc1/4.0;
-        cell1.GetCharges().push_back(q1);
         double t1 = c->tdc1;
-        cell1.GetTimes().push_back(t1);
-        cell1.GetTimeWidths().push_back(tWidth);
-        fHits[cell1.GetSensorId()].push_back(
-            std::shared_ptr<ERepSim::DigiHit>(new ERepSim::DigiHit(cell1)));
+        if (t1 > 0 && q1 > 0) {
+            ERepSim::DigiHit cell1(cell_id1);
+            TVector3 pos1;
+            if (c->mod < 30) {
+                pos1.SetX(c->x - c->l/2.0);
+                pos1.SetY(c->y);
+                pos1.SetZ(c->z);
+            }
+            else {
+                pos1.SetX(c->x);
+                pos1.SetY(c->y - c->l/2.0);
+                pos1.SetZ(c->z);
+            }
+
+            cell1.SetPosition(pos1.X(),pos1.Y(),pos1.Z());
+            cell1.GetCharges().push_back(q1);
+            minTime = std::min(t1,minTime);
+            maxTime = std::max(t1,maxTime);
+            cell1.GetTimes().push_back(t1);
+            cell1.GetTimeWidths().push_back(tWidth);
+            fHits[cell1.GetSensorId()].push_back(
+                std::shared_ptr<ERepSim::DigiHit>(
+                    new ERepSim::DigiHit(cell1)));
+        }
 
 
         // Do sensor 2:  The id is ddddd mmmmmm
@@ -139,27 +147,35 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
         tWidth = std::max(1*unit::ns, tWidth);
         tWidth = std::min(10*unit::ns, tWidth);
 
-        ERepSim::DigiHit cell2(cell_id2);
-        TVector3 pos2;
-        if (c->mod < 30) {
-            pos2.SetX(c->x + c->l/2.0);
-            pos2.SetY(c->y);
-            pos2.SetZ(c->z);
-        }
-        else {
-            pos2.SetX(c->x);
-            pos2.SetY(c->y + c->l/2.0);
-            pos2.SetZ(c->z);
-        }
-        cell2.SetPosition(pos2.X(),pos2.Y(),pos2.Z());
         double q2 = c->adc2/4.0;
-        cell2.GetCharges().push_back(q2);
         double t2 = c->tdc2;
-        cell2.GetTimes().push_back(t2);
-        cell2.GetTimeWidths().push_back(tWidth);
-        fHits[cell2.GetSensorId()].push_back(
-            std::shared_ptr<ERepSim::DigiHit>(new ERepSim::DigiHit(cell2)));
+        if (t2 > 0 && q2 > 0) {
+            ERepSim::DigiHit cell2(cell_id2);
+            TVector3 pos2;
+            if (c->mod < 30) {
+                pos2.SetX(c->x + c->l/2.0);
+                pos2.SetY(c->y);
+                pos2.SetZ(c->z);
+            }
+            else {
+                pos2.SetX(c->x);
+                pos2.SetY(c->y + c->l/2.0);
+                pos2.SetZ(c->z);
+            }
+            cell2.SetPosition(pos2.X(),pos2.Y(),pos2.Z());
+            cell2.GetCharges().push_back(q2);
+            cell2.GetTimes().push_back(t2);
+            cell2.GetTimeWidths().push_back(tWidth);
+            fHits[cell2.GetSensorId()].push_back(
+                std::shared_ptr<ERepSim::DigiHit>(
+                    new ERepSim::DigiHit(cell2)));
+        }
+    }
 
+    if (fCells->size() > 0) {
+        std::cout << " min " << minTime
+                  << "  max "  << maxTime
+                  << std::endl;
     }
 
     // Pack all of the ecal hit segments.
