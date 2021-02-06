@@ -12,6 +12,7 @@
 #include <TGeoManager.h>
 #include <TRandom.h>
 #include <TPRegexp.h>
+#include <TH1F.h>
 
 #include <iostream>
 #include <sstream>
@@ -135,7 +136,6 @@ int main(int argc, char **argv) {
     int sanity = false;
     // The detectors that will be simulated during this run.
     std::vector<std::shared_ptr<ERepSim::DetectorBase>> gDetectors;
-
 
     while (true) {
         int c = getopt(argc,argv,"M:n:N:o:r:S");
@@ -360,6 +360,11 @@ int main(int argc, char **argv) {
         detector->Initialize();
     }
 
+    TH1F* histExcludedInteractions
+        = new TH1F("excludedInteractions",
+                   "Interactions excluded from each event",
+                   20,-0.5,19.5);
+
     // Make the events...
     std::vector<int> selectedEntries;
     std::vector<int> possibleEntries;
@@ -374,6 +379,7 @@ int main(int argc, char **argv) {
 
         // Select the entries to use from each input source.
         bool eventOK = true;
+        int excludedVolume = 0;
         for (EventTree& et : inputFiles) {
             selectedEntries.clear();
             possibleEntries.clear();
@@ -487,7 +493,10 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                if (excludeEntry) continue;
+                if (excludeEntry) {
+                    ++excludedVolume;
+                    continue;
+                }
 
                 ///////////////////////////////////////
                 // Add the entry to the erepSim event.
@@ -500,6 +509,9 @@ int main(int argc, char **argv) {
         }
 
         if (!eventOK) break;
+        std::cout << "Number of interactions excluded: " << excludedVolume
+                  << std::endl;
+        histExcludedInteractions->Fill(excludedVolume);
 
         // Apply the sensors and DAQ
         for (std::shared_ptr<ERepSim::DetectorBase>& detector
@@ -510,6 +522,7 @@ int main(int argc, char **argv) {
         ERepSim::Output::Get().Fill();
     }
 
+    histExcludedInteractions->Write();
     ERepSim::Output::Get().Write();
 }
 
