@@ -172,12 +172,6 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
         }
     }
 
-    if (fCells->size() > 0) {
-        std::cout << " min " << minTime
-                  << "  max "  << maxTime
-                  << std::endl;
-    }
-
     // Pack all of the ecal hit segments.
     const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     TG4HitSegmentDetectors::const_iterator detector = segments.find("EMCalSci");
