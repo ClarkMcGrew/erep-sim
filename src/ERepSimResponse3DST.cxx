@@ -25,20 +25,20 @@ bool ERepSim::Response3DST::RecurseGeometry() {
     if (name.find("3DSTPlane_PV") != std::string::npos) {
         ++fPlanes;
         fPlaneMin = std::min(fPlaneMin,master[2]);
-        fPlaneMax = std::max(fPlaneMin,master[2]);
+        fPlaneMax = std::max(fPlaneMax,master[2]);
     }
     else if (name.find("3DSTBar_PV") != std::string::npos) {
         ++fBars;
         fBarMin = std::min(fBarMin,master[1]);
-        fBarMax = std::max(fBarMin,master[1]);
+        fBarMax = std::max(fBarMax,master[1]);
     }
     else if (name.find("volcube_PV") != std::string::npos) {
         ++fCubes;
         fCubeMin = std::min(fCubeMin,master[0]);
-        fCubeMax = std::max(fCubeMin,master[0]);
+        fCubeMax = std::max(fCubeMax,master[0]);
     }
 
-    // Sort circuit.  Only look at the daughers for the "_0" plane and bar.
+    // Sort circuit.  Only look at the daughters for the "_0" plane and bar.
     if (name.find("3DSTPlane_PV") != std::string::npos
         && name.find("3DSTPlane_PV_0") == std::string::npos) return false;
     if (name.find("3DSTBar_PV") != std::string::npos
