@@ -368,6 +368,10 @@ int main(int argc, char **argv) {
     // Save the geometry into the output file
     gGeoManager->Write();
 
+    // Make quadruple sure that the random number generator is seeded
+    // correctly.
+    gRandom->SetSeed(0);
+
     // Initialize all of the detectors.
     for (std::shared_ptr<ERepSim::DetectorBase>& detector : gDetectors) {
         detector->Initialize();
