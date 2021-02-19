@@ -5,6 +5,7 @@
 #include "ERepSimDetector3DST.hxx"
 #include "ERepSimDetectorTPC.hxx"
 #include "ERepSimDefs.hxx"
+#include "ERepSimUnits.hxx"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -27,6 +28,10 @@ void usage() {
     std::cout << "Usage: erep-sim -o output.root [options] [input.root]"
               << std::endl;
     std::cout << std::endl;
+    std::cout << "   -E [window]        Set the ECal integration window."
+              << std::endl
+              << "                      (default is 400ns)"
+              << std::endl;
     std::cout << "   -o [output-file]   Set the output file" << std::endl;
     std::cout << "   -r [run-number]    Set the run number" << std::endl;
     std::cout << "   -n [event-count]   Events to generate" << std::endl;
@@ -136,11 +141,18 @@ int main(int argc, char **argv) {
     int sanity = false;
     // The detectors that will be simulated during this run.
     std::vector<std::shared_ptr<ERepSim::DetectorBase>> gDetectors;
+    // The default ECal integration window.
+    double ecalIntegrationWindow = 400*unit::ns;
 
     while (true) {
-        int c = getopt(argc,argv,"M:n:N:o:r:S");
+        int c = getopt(argc,argv,"E:M:n:N:o:r:S");
         if (c<0) break;
         switch (c) {
+        case 'E': {
+            std::istringstream tmp(optarg);
+            tmp >> ecalIntegrationWindow;
+            break;
+        }
         case 'M': {
             EventTree et;
             std::string file(optarg);
@@ -322,9 +334,10 @@ int main(int argc, char **argv) {
 
     if (ecalKludgeChain) {
         std::cout << "ERepSim:: Create ECal." << std::endl;
-        gDetectors.push_back(
-            std::shared_ptr<ERepSim::DetectorECal>(
-                new ERepSim::DetectorECal(ecalKludgeChain.get())));
+        std::shared_ptr<ERepSim::DetectorECal> ecalSim(
+            new ERepSim::DetectorECal(ecalKludgeChain.get()));
+        ecalSim->SetIntegrationWindow(ecalIntegrationWindow);
+        gDetectors.push_back(ecalSim);
     }
     gDetectors.push_back(
         std::shared_ptr<ERepSim::Detector3DST>(

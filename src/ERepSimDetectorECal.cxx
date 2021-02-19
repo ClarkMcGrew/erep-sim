@@ -15,6 +15,7 @@
 
 ERepSim::DetectorECal::DetectorECal(TTree* tDigitTree)
     : DetectorBase("ECal"), fDigitTree(tDigitTree) {
+    fIntegrationWindow = 400*unit::ns;
     Initialize();
 }
 
@@ -231,22 +232,21 @@ namespace {
 }
 
 void ERepSim::DetectorECal::Process(int entry) {
-#ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Process " << fHits.size()
+              << " hits with " << fIntegrationWindow
+              << " ns integration window"
               << std::endl;
-#endif
     int generatedHits = 0;
     for (ERepSim::DigiHit::Map::iterator c = fHits.begin();
          c != fHits.end(); ++c) {
         ERepSim::DigiHit::Container& hits = c->second;
         std::sort(hits.begin(), hits.end(), DigiHitTimeSort());
         if (hits.empty()) continue;
-        const double integrationWindow = 400*unit::ns;
         for (ERepSim::DigiHit::Container::iterator hit = hits.begin();
              hit != hits.end(); ++hit) {
             ERepSim::DigiHit::Container::iterator h = hit+1;
             while (h != hits.end()
-                   && (*h)->GetTime()-(*hit)->GetTime() < integrationWindow) {
+                   && (*h)->GetTime()-(*hit)->GetTime() < fIntegrationWindow) {
                 (*hit)->GetCharges()[0] += (*h)->GetCharge();
                 h = hits.erase(h);
             }

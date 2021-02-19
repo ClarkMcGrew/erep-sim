@@ -27,6 +27,8 @@ public:
 
     virtual void Reset();
 
+    void SetIntegrationWindow(double w) {fIntegrationWindow = w;}
+
 private:
     // The input tree and the branch variables prepared by the sand-stt code.
     TTree* fDigitTree;
@@ -37,6 +39,11 @@ private:
     // processed to fix the very simplistic STT electronics models during
     // Process().
     ERepSim::DigiHit::Map fHits;
+
+    // The integration window in the ECal.  This is used when combining the
+    // input events from SAND-STT.
+    double fIntegrationWindow;
+
 };
 #endif
 
