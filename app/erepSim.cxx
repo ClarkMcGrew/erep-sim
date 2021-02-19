@@ -371,6 +371,7 @@ int main(int argc, char **argv) {
     // Make quadruple sure that the random number generator is seeded
     // correctly.
     gRandom->SetSeed(0);
+    std::cout << "Using random seed " << gRandom->GetSeed() << std::endl;
 
     // Initialize all of the detectors.
     for (std::shared_ptr<ERepSim::DetectorBase>& detector : gDetectors) {
