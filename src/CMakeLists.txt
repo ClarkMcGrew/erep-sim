@@ -13,7 +13,7 @@ endif(ROOT_FOUND)
 # Define the source and include files that should be used for the io
 # part of ERepSim.
 set(source
-  ERepSimOutput.cxx
+  ERepSimOutput.cxx ERepSimSegmentIdManager.cxx
   ERepSimCarrier.cxx ERepSimImpulse.cxx ERepSimDigiHit.cxx
   ERepSimResponseBase.cxx  ERepSimResponse3DST.cxx
   ERepSimSensorBase.cxx ERepSimSensorIdeal.cxx
@@ -24,7 +24,7 @@ set(source
   )
 
 set(includes
-  ERepSimOutput.hxx ERepSimInput.hxx
+  ERepSimOutput.hxx ERepSimInput.hxx ERepSimSegmentIdManager.hxx
   ERepSimCarrier.hxx ERepSimImpulse.hxx ERepSimDigiHit.hxx
   ERepSimResponseBase.hxx ERepSimResponse3DST.hxx
   ERepSimSensorBase.hxx  ERepSimSensorIdeal.cxx
