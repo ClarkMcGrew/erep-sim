@@ -2,6 +2,7 @@
 #define ERepSimDigiHit_hxx_seen
 
 #include "ERepSimImpulse.hxx"
+#include "TG4HitSegment.h"
 
 namespace ERepSim {
     class DigiHit;
@@ -31,6 +32,11 @@ public:
 
     /// Add an impulse to the hit.
     void AddImpulse(std::shared_ptr<ERepSim::Impulse> c) {
+        if (!fDirectSegments.empty()) {
+            // Cannot have impulses and direct segments: This might be overly
+            // strict, but is here at least for the initial debugging.
+            throw std::runtime_error("Segments in hit when adding an impulse");
+        }
         fImpulses.push_back(c);
     }
 
@@ -100,6 +106,17 @@ public:
         return fCaliCharges.front();
     }
 
+    /// Add a direct hit segment to this hit.  This will prevent adding the
+    /// impulses to the output.  It's intended to allow overlaying of hits,
+    /// not just the energy deposit.
+    void AddDirectHitSegment(int segId, const TG4HitSegment& seg);
+
+    /// This should only be used in ERepSimDetectorBase.  It could be handled
+    /// using "friend".
+    const std::map<int, TG4HitSegment>& GetDirectSegments() const {
+        return fDirectSegments;
+    }
+
 private:
 
     /// The sensor that generated this impulse
@@ -129,6 +146,16 @@ private:
 
     /// The calibrated charge(s).
     std::vector<double> fCaliCharges;
-};
 
+    /// Any segments that got directly attached to this hit.  When there are
+    /// direct segments, then the impulses should not be processed separately.
+    /// The key is the segment id (so we can keep the segments unique).
+    std::map<int, TG4HitSegment> fDirectSegments;
+};
 #endif
+
+// Local Variables:
+// mode:c++
+// c-basic-offset:4
+// compile-command:"$(git rev-parse --show-toplevel)/build/erep-build.sh force"
+// End:

@@ -35,6 +35,39 @@ void ERepSim::DetectorBase::PackDigiHit(const ERepSim::DigiHit& hit) {
         ERepSim::Output::Get().SegmentIds.size());
 }
 
+void ERepSim::DetectorBase::PackDirectSegments(const ERepSim::DigiHit& hit) {
+    for (std::map<int,TG4HitSegment>::const_iterator s
+             = hit.GetDirectSegments().begin();
+         s != hit.GetDirectSegments().end(); ++s) {
+        double ener = -1.0;
+        TLorentzVector sPos;
+        TLorentzVector sPos1;
+        TLorentzVector sPos2;
+        int pdg = 0;
+        int trackId = -1;
+        const TG4HitSegment& g4Seg = s->second;
+        ener = g4Seg.GetEnergyDeposit();
+        sPos1 = g4Seg.GetStart();
+        sPos2 = g4Seg.GetStop();
+        sPos = 0.5*(sPos1 + sPos2);
+        if (!g4Seg.Contrib.empty()) {
+            trackId = g4Seg.Contrib.front();
+            pdg = ERepSim::Output::Get().TrajectoryPDG[trackId];
+        }
+        ERepSim::Output::Get().SegmentIds.push_back(s->first);
+        ERepSim::Output::Get().SegmentTrackId.push_back(trackId);
+        ERepSim::Output::Get().SegmentEnergy.push_back(ener);
+        ERepSim::Output::Get().SegmentPDG.push_back(pdg);
+        ERepSim::Output::Get().SegmentX1.push_back(sPos1.X());
+        ERepSim::Output::Get().SegmentY1.push_back(sPos1.Y());
+        ERepSim::Output::Get().SegmentZ1.push_back(sPos1.Z());
+        ERepSim::Output::Get().SegmentX2.push_back(sPos2.X());
+        ERepSim::Output::Get().SegmentY2.push_back(sPos2.Y());
+        ERepSim::Output::Get().SegmentZ2.push_back(sPos2.Z());
+        ERepSim::Output::Get().SegmentT.push_back(sPos.T());
+    }
+}
+
 void ERepSim::DetectorBase::PackImpulses(
     const ERepSim::Impulse::Container& impulses) {
     std::map<int,TG4HitSegment> segmentIds;

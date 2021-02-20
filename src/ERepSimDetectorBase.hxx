@@ -50,6 +50,7 @@ protected:
 
     /// Pack the output!
     void PackDigiHit(const ERepSim::DigiHit& hit);
+    void PackDirectSegments(const ERepSim::DigiHit& hit);
     void PackImpulses(const ERepSim::Impulse::Container& impulses);
 };
 #endif
