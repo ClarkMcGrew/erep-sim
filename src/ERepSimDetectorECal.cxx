@@ -3,6 +3,7 @@
 #include "ERepSimDigiHit.hxx"
 #include "ERepSimUnits.hxx"
 #include "ERepSimDefs.hxx"
+#include "ERepSimSegmentIdManager.hxx"
 
 #include "ERepSimOutput.hxx"
 
@@ -44,6 +45,26 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     }
     fDigitTree->SetBranchAddress("cell",&fCells);
     fDigitTree->GetEntry(entry);
+
+    std::map<int, TG4HitSegment> segmentIdMap;
+
+    // Get all the hit segments and assign proper segment identifiers.
+    const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
+    TG4HitSegmentDetectors::const_iterator detector = segments.find("EMCalSci");
+    if (detector != segments.end()) { // The ecal was found!
+        const TG4HitSegmentContainer&  g4Hits = detector->second;
+#ifdef LOUD_AND_PROUD
+        std::cout << "ERepSim::DetectorECal: Pack "
+                  << g4Hits.size() << " segments"
+                  << std::endl;
+#endif
+        ERepSim::SegmentIdManager manager;
+        for (TG4HitSegmentContainer::const_iterator s = g4Hits.begin();
+             s != g4Hits.end(); ++s) {
+            int segId = manager.GetNextSegmentIdentifier();
+            segmentIdMap[segId] = *s;
+        }
+    }
 
     double minTime = 1E+20;
     double maxTime = -1E+20;
@@ -173,48 +194,6 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
         }
     }
 
-    // Pack all of the ecal hit segments.
-    const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
-    TG4HitSegmentDetectors::const_iterator detector = segments.find("EMCalSci");
-    if (detector != segments.end()) {
-        const TG4HitSegmentContainer&  g4Hits = detector->second;
-#ifdef LOUD_AND_PROUD
-        std::cout << "ERepSim::DetectorECal: Pack "
-                  << g4Hits.size() << " segments"
-                  << std::endl;
-#endif
-        for (TG4HitSegmentContainer::const_iterator s = g4Hits.begin();
-             s != g4Hits.end(); ++s) {
-            TLorentzVector sPos;
-            TLorentzVector sPos1;
-            TLorentzVector sPos2;
-            int pdg = 0;
-            int trackId = -1;
-            double ener = s->GetEnergyDeposit();
-            sPos1 = s->GetStart();
-            sPos2 = s->GetStop();
-            sPos = 0.5*(sPos1 + sPos2);
-            if (!s->Contrib.empty()) {
-                trackId = s->Contrib.front();
-                if (trackId >= 0) {
-                    trackId += ERepSim::Output::Get().TrajectoryIdOffset;
-                }
-                pdg = ERepSim::Output::Get().TrajectoryPDG[trackId];
-            }
-            ERepSim::Output::Get().SegmentIds.push_back(
-                ERepSim::ResponseBase::GetNextSegmentIdentifier());
-            ERepSim::Output::Get().SegmentTrackId.push_back(trackId);
-            ERepSim::Output::Get().SegmentEnergy.push_back(ener);
-            ERepSim::Output::Get().SegmentPDG.push_back(pdg);
-            ERepSim::Output::Get().SegmentX1.push_back(sPos1.X());
-            ERepSim::Output::Get().SegmentY1.push_back(sPos1.Y());
-            ERepSim::Output::Get().SegmentZ1.push_back(sPos1.Z());
-            ERepSim::Output::Get().SegmentX2.push_back(sPos2.X());
-            ERepSim::Output::Get().SegmentY2.push_back(sPos2.Y());
-            ERepSim::Output::Get().SegmentZ2.push_back(sPos2.Z());
-            ERepSim::Output::Get().SegmentT.push_back(sPos.T());
-        }
-    }
 
 #ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Accumulate " << generatedHits

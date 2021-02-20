@@ -5,8 +5,6 @@ ERepSim::ResponseBase::ResponseBase(const char *modelname)
 
 ERepSim::ResponseBase::~ResponseBase() { }
 
-int ERepSim::ResponseBase::fSegmentIdentifier = 0;
-
 void ERepSim::ResponseBase::Reset() {
     if (fCarriers) fCarriers->clear();
     fCarriers.reset(new ERepSim::Carrier::Map);

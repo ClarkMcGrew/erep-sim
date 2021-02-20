@@ -1,6 +1,7 @@
 #include "ERepSimResponseTPC.hxx"
 #include "ERepSimOutput.hxx"
 #include "ERepSimUnits.hxx"
+#include "ERepSimSegmentIdManager.hxx"
 
 #include <TGeoManager.h>
 #include <TGeoBBox.h>
@@ -105,7 +106,8 @@ void ERepSim::ResponseTPC::Process(const TG4Event* event,
 
     for (std::size_t i = 0; i<segments.size(); ++i) {
         const TG4HitSegment& seg = segments[i];
-        int segId = GetNextSegmentIdentifier();
+        ERepSim::SegmentIdManager manager;
+        int segId = manager.GetNextSegmentIdentifier();
         AddTrack(event,seg,segId);
     }
 

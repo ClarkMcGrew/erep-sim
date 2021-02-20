@@ -1,6 +1,7 @@
 #include "ERepSimResponse3DST.hxx"
 #include "ERepSimOutput.hxx"
 #include "ERepSimDefs.hxx"
+#include "ERepSimSegmentIdManager.hxx"
 
 #include <TGeoManager.h>
 #include <TGeoNode.h>
@@ -140,7 +141,8 @@ void ERepSim::Response3DST::Process(const TG4Event* event,
     TLorentzVector avg;
     for (std::size_t i = 0; i < segments.size(); ++i) {
         const TG4HitSegment& segment = segments[i];
-        int segId = GetNextSegmentIdentifier();
+        ERepSim::SegmentIdManager manager;
+        int segId = manager.GetNextSegmentIdentifier();
         avg = 0.5*segment.GetStart() + 0.5*segment.GetStop();
         double deposit = segment.GetSecondaryDeposit();
         if (deposit < 1E-6) deposit = segment.GetEnergyDeposit();
