@@ -8,7 +8,8 @@ ERepSim::SegmentIdManager::~SegmentIdManager() {}
 int ERepSim::SegmentIdManager::GetNextSegmentIdentifier() {
     if (fSegmentIdentifier < 0) fSegmentIdentifier = 0;
     ++fSegmentIdentifier;
-    if (fSegmentIdentifier > 1000000) fSegmentIdentifier = 1;
+    const int maximumId = (1<<30);
+    if (fSegmentIdentifier > maximumId) fSegmentIdentifier = 1;
     return fSegmentIdentifier;
 }
 
