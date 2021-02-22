@@ -51,20 +51,70 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     // Get all the hit segments and assign proper segment identifiers.
     const TG4HitSegmentDetectors& segments = event->SegmentDetectors;
     TG4HitSegmentDetectors::const_iterator detector = segments.find("EMCalSci");
-    if (detector != segments.end()) { // The ecal was found!
-        const TG4HitSegmentContainer&  g4Hits = detector->second;
-#ifdef LOUD_AND_PROUD
-        std::cout << "ERepSim::DetectorECal: Pack "
-                  << g4Hits.size() << " segments"
-                  << std::endl;
-#endif
-        ERepSim::SegmentIdManager manager;
-        for (TG4HitSegmentContainer::const_iterator s = g4Hits.begin();
-             s != g4Hits.end(); ++s) {
-            int segId = manager.GetNextSegmentIdentifier();
-            segmentIdMap[segId] = *s;
-        }
+    if (detector == segments.end()) {
+        return;
     }
+
+    const TG4HitSegmentContainer&  g4Hits = detector->second;
+#define LOUD_AND_PROUD
+#ifdef LOUD_AND_PROUD
+#undef LOUD_AND_PROUD
+    std::cout << "DetectorECal::Accumulate -- "
+              << g4Hits.size() << " segments"
+              << std::endl;
+#endif
+
+    ERepSim::SegmentIdManager manager;
+    for (TG4HitSegmentContainer::const_iterator s = g4Hits.begin();
+         s != g4Hits.end(); ++s) {
+        int segId = manager.GetNextSegmentIdentifier();
+        segmentIdMap[segId] = *s;
+    }
+
+    std::map<int,std::vector<int>> cellToSegs;
+
+    // Loop over the cell vector and figure out which segments go into which
+    // cell.
+    for (std::map<int, TG4HitSegment>::iterator seg = segmentIdMap.begin();
+         seg != segmentIdMap.end(); ++seg) {
+        int bestCell = -1;
+        double bestSegDist = 1E+20;
+        TVector3 segPos = 0.5*(seg->second.GetStart().Vect()
+                               + seg->second.GetStop().Vect());
+        for (std::vector<cell>::iterator c = fCells->begin();
+             c != fCells->end(); ++c) {
+            TVector3 projection(0.0,1.0,1.0);
+            if (c->mod > 29) {
+                // End-cap module
+                projection.SetX(1.0);
+                projection.SetY(0.0);
+            }
+            TVector3 cellCenter(c->x,c->y,c->z);
+            TVector3 dist = segPos - cellCenter;
+            for (int i=0; i<3; ++i) dist[i] = std::abs(projection[i]*dist[i]);
+            if (dist.X() > 2.5*unit::cm) continue;
+            if (dist.Y() > 2.5*unit::cm) continue;
+            if (dist.Z() > 2.5*unit::cm) continue;
+            if (dist.Mag() < bestSegDist) {
+                bestSegDist = dist.Mag();
+                bestCell = c->mod << 21;
+                bestCell += c->lay << 17;
+                bestCell += c->cel << 9;
+            }
+        }
+        // Check if we got a good cell
+        if (bestSegDist > 3*unit::cm) continue;
+        cellToSegs[bestCell].push_back(seg->first);
+    }
+
+    const double velocityFiber = 1.0*unit::meter/(5.85*unit::ns);
+
+    // DANGER WILL ROBINSON.  THIS IS EMPERICALLY DETERMINED BY INSPECTING
+    // THE SAND-STT OUTPUT.
+    //
+    // The most probable offset seems to be between 15 and 18 ns, but there
+    // are fluctuations.
+    const double t0Offset = -20.0*unit::ns; // SHOULD BE A PARAMETER!!!!
 
     double minTime = 1E+20;
     double maxTime = -1E+20;
@@ -77,6 +127,13 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     for (std::vector<cell>::iterator c = fCells->begin();
          c != fCells->end(); ++c) {
         if (c->mod > 29) continue;
+
+        // Get the plain id for the cell.  This is the index to find the hit
+        // segments.
+        int cellId = c->mod << 21;
+        cellId += c->lay << 17;
+        cellId += c->cel << 9;
+        const std::vector<int>& segmentIds = cellToSegs[cellId];
 
         // Do sensor 1:  The id is ddddd mmmmmm
         //
@@ -131,6 +188,18 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
             maxTime = std::max(t1,maxTime);
             cell1.GetTimes().push_back(t1);
             cell1.GetTimeWidths().push_back(tWidth);
+            double minT = 1E+20;
+            for (int segId : segmentIds) {
+                const TG4HitSegment& segment = segmentIdMap[segId];
+                double dX = (segment.GetStart().Vect()
+                             - cell1.GetPosition()).Mag();
+                double dT = segment.GetStart().T() + dX/velocityFiber
+                    - cell1.GetTimes().front() - t0Offset;
+                minT = std::min(minT,dT);
+                if (dT < 0.0) continue;
+                if (dT > fIntegrationWindow) continue;
+                cell1.AddDirectHitSegment(segId,segment);
+            }
             fHits[cell1.GetSensorId()].push_back(
                 std::shared_ptr<ERepSim::DigiHit>(
                     new ERepSim::DigiHit(cell1)));
@@ -188,12 +257,21 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
             cell2.GetCharges().push_back(q2);
             cell2.GetTimes().push_back(t2);
             cell2.GetTimeWidths().push_back(tWidth);
+            for (int segId : segmentIds) {
+                const TG4HitSegment& segment = segmentIdMap[segId];
+                double dX = (segment.GetStart().Vect()
+                             - cell2.GetPosition()).Mag();
+                double dT = segment.GetStart().T() + dX/velocityFiber
+                    - cell2.GetTimes().front() - t0Offset;
+                if (dT < 0.0) continue;
+                if (dT > fIntegrationWindow) continue;
+                cell2.AddDirectHitSegment(segId,segment);
+            }
             fHits[cell2.GetSensorId()].push_back(
                 std::shared_ptr<ERepSim::DigiHit>(
                     new ERepSim::DigiHit(cell2)));
         }
     }
-
 
 #ifdef LOUD_AND_PROUD
     std::cout << "DetectorECal::Accumulate " << generatedHits
