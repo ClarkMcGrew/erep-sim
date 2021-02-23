@@ -67,8 +67,27 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     ERepSim::SegmentIdManager manager;
     for (TG4HitSegmentContainer::const_iterator s = g4Hits.begin();
          s != g4Hits.end(); ++s) {
+        TVector3 pnt = 0.5*(s->GetStart().Vect() + s->GetStop().Vect());
+        TGeoNode* node  = gGeoManager->FindNode(pnt.X(),pnt.Y(),pnt.Z());
+        if (!node) continue;
+        std::string volumeName = gGeoManager->GetPath();
+        if (volumeName.find("kloe_calo_volume") == std::string::npos) {
+            std::cout << "Not in ECal "
+                      << volumeName
+                      << std::endl;
+            continue;
+        }
         int segId = manager.GetNextSegmentIdentifier();
-        segmentIdMap[segId] = *s;
+        TG4HitSegment seg = *s;
+        if (seg.PrimaryId >= 0) {
+            seg.PrimaryId  += ERepSim::Output::Get().TrajectoryIdOffset;
+            for (std::size_t i = 0; i < seg.Contrib.size(); ++i) {
+                if (seg.Contrib[i] >= 0) {
+                    seg.Contrib[i] += ERepSim::Output::Get().TrajectoryIdOffset;
+                }
+            }
+        }
+        segmentIdMap[segId] = seg;
     }
 
     std::map<int,std::vector<int>> cellToSegs;
@@ -103,8 +122,18 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
             }
         }
         // Check if we got a good cell
-        if (bestSegDist > 3*unit::cm) continue;
+        if (bestCell < 0) continue;
+        if (bestSegDist > 3.0*unit::cm) continue;
         cellToSegs[bestCell].push_back(seg->first);
+    }
+
+    // Triple check there aren't duplicates.
+    for (auto elem : cellToSegs) {
+        std::vector<int>& segIds = elem.second;
+        std::sort(segIds.begin(),segIds.end());
+        std::vector<int>::iterator end
+            = std::unique(segIds.begin(),segIds.end());
+        segIds.erase(end,segIds.end());
     }
 
     const double velocityFiber = 1.0*unit::meter/(5.85*unit::ns);
@@ -114,7 +143,7 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
     //
     // The most probable offset seems to be between 15 and 18 ns, but there
     // are fluctuations.
-    const double t0Offset = -20.0*unit::ns; // SHOULD BE A PARAMETER!!!!
+    const double t0Offset = -18.0*unit::ns;
 
     double minTime = 1E+20;
     double maxTime = -1E+20;
@@ -196,10 +225,11 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
                 double dT = segment.GetStart().T() + dX/velocityFiber
                     - cell1.GetTimes().front() - t0Offset;
                 minT = std::min(minT,dT);
-                if (dT < 0.0) continue;
-                if (dT > fIntegrationWindow) continue;
+                if (dT < -5.0) continue;
+                if (dT > fIntegrationWindow + 5.0) continue;
                 cell1.AddDirectHitSegment(segId,segment);
             }
+
             fHits[cell1.GetSensorId()].push_back(
                 std::shared_ptr<ERepSim::DigiHit>(
                     new ERepSim::DigiHit(cell1)));
@@ -263,8 +293,8 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
                              - cell2.GetPosition()).Mag();
                 double dT = segment.GetStart().T() + dX/velocityFiber
                     - cell2.GetTimes().front() - t0Offset;
-                if (dT < 0.0) continue;
-                if (dT > fIntegrationWindow) continue;
+                if (dT < -5.0) continue;
+                if (dT > fIntegrationWindow + 5.0) continue;
                 cell2.AddDirectHitSegment(segId,segment);
             }
             fHits[cell2.GetSensorId()].push_back(
