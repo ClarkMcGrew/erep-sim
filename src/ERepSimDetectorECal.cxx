@@ -111,9 +111,12 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
             TVector3 cellCenter(c->x,c->y,c->z);
             TVector3 dist = segPos - cellCenter;
             for (int i=0; i<3; ++i) dist[i] = std::abs(projection[i]*dist[i]);
+#define LIMIT_CELL_SIZE
+#ifdef LIMIT_CELL_SIZE
             if (dist.X() > 2.5*unit::cm) continue;
             if (dist.Y() > 2.5*unit::cm) continue;
             if (dist.Z() > 2.5*unit::cm) continue;
+#endif
             if (dist.Mag() < bestSegDist) {
                 bestSegDist = dist.Mag();
                 bestCell = c->mod << 21;
@@ -122,8 +125,12 @@ void ERepSim::DetectorECal::Accumulate(int entry, const TG4Event* event) {
             }
         }
         // Check if we got a good cell
-        if (bestCell < 0) continue;
-        if (bestSegDist > 3.0*unit::cm) continue;
+        if (bestCell < 0) {
+            continue;
+        }
+        if (bestSegDist > 3.0*unit::cm) {
+            continue;
+        }
         cellToSegs[bestCell].push_back(seg->first);
     }
 
