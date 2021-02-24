@@ -383,6 +383,9 @@ void ERepSim::DetectorECal::Process(int entry) {
             while (h != hits.end()
                    && (*h)->GetTime()-(*hit)->GetTime() < fIntegrationWindow) {
                 (*hit)->GetCharges()[0] += (*h)->GetCharge();
+                for (auto elem : (*h)->GetDirectSegments()) {
+                    (*hit)->AddDirectHitSegment(elem.first,elem.second);
+                }
                 h = hits.erase(h);
             }
             PackDigiHit(*(*hit));
